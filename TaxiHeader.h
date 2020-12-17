@@ -7,6 +7,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h> 
 #include <sys/sem.h>
+#include <time.h>
 
 
 #define EXIT_ON_ERROR if (errno) {fprintf(stderr,  \
@@ -18,8 +19,8 @@
 
 
 
-unsigned int SO_WIDTH = 5;
-unsigned int SO_HEIGHT = 5;
+unsigned int SO_WIDTH = 6;
+unsigned int SO_HEIGHT = 7;
 //runtime:
 unsigned int SO_HOLES; //numero celle inaccessibili (<= W x H)
 unsigned int SO_TIMESEC_MIN; //tempo minimo attraversamento cella (nanosec)

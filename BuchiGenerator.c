@@ -10,8 +10,8 @@
 #include <time.h>
 
 
-#define R 8
-#define C 8
+#define R 1
+#define C 5
 
 void printMap(int map[R][C]){
     int i,j; //riga e colonna
@@ -40,61 +40,83 @@ int main(){
 
    mapGenerator(A);
 
- /*srand(time(NULL));
+  srand(time(NULL));
   int r = rand() %R; 
   int c = rand() %C;
 
   A[r][c] = 1; 
-  printMap(A);*/
+  printMap(A);
+  puts("\n");
 
  for(int i=0; i<R; i++){
-	
+		for(int j=0; j<C; j++){
 
-	for(int j=0; j<C; j++){
+			if(i == 0 && j ==0){ //ALTO SX
 
-		if(i == 0 && j ==0){ //ALTO SX
+				if((A[i][j] != 1) && (A[i][j+1] != 1) && (A[i+1][j] != 1) && (A[i+1][j+1] != 1)){
+					A[i][j] = 1;
+					count++;
+				}
+				
+			}else if(i > 0 && j > 0 && i<(R-1) && j<(C-1)){	//CENTRALE esclusi gli estremi
 
-			if((A[i][j] != 1) && (A[i][j+1] != 1) && (A[i+1][j] != 1) && (A[i+1][j+1] != 1)){
-				A[i][j] = 1;
-				count++;
-			}
-			
-		}else if(i > 0 && j > 0 && i<(R-1) && j<(C-1)){	//CENTRALE
+				if((A[i][j]!=1) && (A[i-1][j-1]!=1) && (A[i-1][j]!=1) && (A[i-1][j+1]!=1) && (A[i][j-1]!=1) && (A[i][j+1]!=1) && (A[i+1][j-1]!=1) && (A[i+1][j]!=1) &&(A[i+1][j+1]!=1)){
+					A[i][j] = 1;
+					count++;
+				}
 
-			if((A[i][j]!=1) && (A[i-1][j-1]!=1) && (A[i-1][j]!=1) && (A[i-1][j+1]!=1) && (A[i][j-1]!=1) && (A[i][j+1]!=1) && (A[i+1][j-1]!=1) && (A[i+1][j]!=1) &&(A[i+1][j+1]!=1)){
-				A[i][j] = 1;
-				count++;
-			}
+			}else if(i == 0 && j>0 && j<(C-1)){	//ALTO centro
 
-		}else if(i == 0 && j == (C-1)){	//ALTO DX
+				if((A[i][j] != 1) && (A[i][j-1] != 1) && (A[i][j+1] != 1) && (A[i+1][j-1] != 1) && (A[i+1][j] != 1)&& (A[i+1][j+1] != 1)){
+					A[i][j] = 1;
+					count++;
+				}	
 
-			if((A[i][j] != 1) && (A[i][j-1] != 1) && (A[i+1][j] != 1) && (A[i+1][j-1] != 1)){
-				A[i][j] = 1;
-				count++;
-			}
+			}else if(i == (R-1) && j>0 && j<(C-1)){	//BASSO centro
 
-		}else if(i == (R-1) && j == 0){ //BASSO SX
+				if((A[i][j] != 1) && (A[i][j-1] != 1) && (A[i][j+1] != 1) && (A[i-1][j-1] != 1) && (A[i-1][j] != 1)&& (A[i-1][j+1] != 1)){
+					A[i][j] = 1;
+					count++;
+				}	
 
-			if((A[i][j] != 1) && (A[i-1][j] != 1) && (A[i][j+1] != 1) && (A[i-1][j+1] != 1)){
-				A[i][j] = 1;
-				count++;
-			}
+			}else if(i>0 && i<(R-1)  && j==0){	//SX centro
 
-		}else if(i == (R-1) && j == (C-1)){ //BASSO DX
+				if((A[i][j] != 1) && (A[i-1][j] != 1) && (A[i+1][j] != 1) && (A[i-1][j+1] != 1) && (A[i][j+1] != 1)&& (A[i+1][j+1] != 1)){
+					A[i][j] = 1;
+					count++;
+				}		
 
-			if((A[i][j] != 1) && (A[i-1][j] != 1) && (A[i][j-1] != 1) && (A[i-1][j-1] != 1)){
-				A[i][j] = 1;
-				count++;
-			}
+			}else if(i>0 && i<(R-1)  && j==(C-1)){	//DX centro
 
+				if((A[i][j] != 1) && (A[i-1][j] != 1) && (A[i+1][j] != 1) && (A[i-1][j-1] != 1) && (A[i][j-1] != 1)&& (A[i+1][j-1] != 1)){
+					A[i][j] = 1;
+					count++;
+				}			
+				
 
+			}else if(i == 0 && j == (C-1)){	//ALTO DX
 
-	}
+				if((A[i][j] != 1) && (A[i][j-1] != 1) && (A[i+1][j] != 1) && (A[i+1][j-1] != 1)){
+					A[i][j] = 1;
+					count++;
+				}
 
-}
+			}else if(i == (R-1) && j == 0){ //BASSO SX
 
+				if((A[i][j] != 1) && (A[i-1][j] != 1) && (A[i][j+1] != 1) && (A[i-1][j+1] != 1)){
+					A[i][j] = 1;
+					count++;
+				}
 
-}
+			}else if(i == (R-1) && j == (C-1)){ //BASSO DX
+
+				if((A[i][j] != 1) && (A[i-1][j] != 1) && (A[i][j-1] != 1) && (A[i-1][j-1] != 1)){
+					A[i][j] = 1;
+					count++;
+				}
+	        }
+        }
+    }
 
 printf("%d\n", count);
 printMap(A);
