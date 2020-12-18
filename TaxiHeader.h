@@ -19,10 +19,10 @@
 
 
 
-unsigned int SO_WIDTH = 6;
-unsigned int SO_HEIGHT = 7;
+unsigned int SO_WIDTH = 5;
+unsigned int SO_HEIGHT = 5;
 //runtime:
-unsigned int SO_HOLES; //numero celle inaccessibili (<= W x H)
+unsigned int SO_HOLES = 0; //numero celle inaccessibili (<= W x H)
 unsigned int SO_TIMESEC_MIN; //tempo minimo attraversamento cella (nanosec)
 unsigned int SO_TIMESEC_MAX; //tempo massimo attraversamento cella (nanosec)
 unsigned int SO_CAP_MIN; //num minimo taxi ospitati in una cella
