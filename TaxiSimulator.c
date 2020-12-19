@@ -138,10 +138,12 @@ int main(int argc, char *argv[]){
     printMap(mappa);
     //Genero celle inaccesibili sulla mappa
     HolesGenerator(mappa);
-
+    printf("Mappa con buchi\n");
     printMap(mappa);  
     printf("i buchi sono: %d\n", SO_HOLES);
+
     
+
 /*
 SO_HOLES = 0 //verrà incrementato alla generazione di un buco
 e sarà una coppia (1,1), un array che indica riga e colonna
