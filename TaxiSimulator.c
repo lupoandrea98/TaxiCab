@@ -125,6 +125,129 @@ void HolesGenerator(int A[SO_HEIGHT][SO_WIDTH]){
 
 }
 
+void SourcesGenerator(int A[SO_HEIGHT][SO_WIDTH]){
+
+    int numSources, r, c;
+
+    srand(time(NULL));
+    //Genero un numero random di buchi da creare nella mappa.
+    numSources = rand() %(SO_HEIGHT*SO_WIDTH-SO_HOLES);
+
+    //printf("le sorgenti dovevano essere: %d\n", numSources);
+    
+    while(numSources!=0){
+        //Genero coordinate randomiche
+        c = rand() %SO_WIDTH; 
+        r = rand() %SO_HEIGHT;
+        //printf("riga: %d\n", r);
+        //printf("colonna: %d\n", c);
+
+        //Controllo che le sorgenti generate rispettino i requisiti (non devono sovrapporsi)
+        if((A[r][c] != 1) && (A[r][c] != 2)){ //"2" indica sulla mappa la posizione della cella sorgente
+            A[r][c] = 2;
+            SO_SOURCES++;     
+        }
+        else{
+        	EXIT_ON_ERROR
+        }
+
+    	numSources--;   
+    	
+    }  
+
+
+}
+
+void TaxiMover(int mappa[SO_HEIGHT][SO_WIDTH]){
+
+    int taxi_r, taxi_c, arrivo_r, arrivo_c, flagR, flagC, finalflag;
+
+    printf("Inserisci coordinate taxi: ");
+
+    scanf("%d", &taxi_r);
+    scanf("%d", &taxi_c);
+
+    printf("Inserisci coordinate di arrivo: ");
+
+    scanf("%d", &arrivo_r);
+    scanf("%d", &arrivo_c);
+
+    printf("TAXI[%d][%d]\n", taxi_r, taxi_c);
+    printf("arrivo[%d][%d]\n", arrivo_r, arrivo_c);
+
+    flagR = 1;
+    flagC = 1;
+    finalflag = 1;
+
+    while(finalflag){   //Contenitore
+
+        while(taxi_r<SO_HEIGHT && flagR){   //Righe
+
+            while(taxi_c<SO_WIDTH && flagC){    //Colonne
+                
+                if((taxi_c < arrivo_c) && (mappa[taxi_r][taxi_c + 1] != 1)){
+                    taxi_c++;
+                    printf("TAXI[%d][%d]\n", taxi_r, taxi_c);
+                }else if((taxi_c > arrivo_c)  && (mappa[taxi_r][taxi_c - 1] != 1)){
+                    taxi_c--;
+                    printf("TAXI[%d][%d]\n", taxi_r, taxi_c);
+                }else if(taxi_c == arrivo_c){
+                    printf("Ho raggiunto la stessa colonna\n");
+                    flagC = 0;
+                    break;
+                }else{  //Ostacolo
+
+                    if(taxi_r + 1 < SO_HEIGHT){
+                        printf("Ostacolo, vado in basso\n");
+                        taxi_r++;
+                    }else if(taxi_r - 1 >= 0){
+                        printf("Ostacolo, vado in alto\n");
+                        taxi_r--;
+                    }
+                }
+
+            }   //Fine while colonne
+        
+            if((taxi_r < arrivo_r)  && (mappa[taxi_r + 1][taxi_c] != 1)){
+                    taxi_r++;
+                    printf("TAXI[%d][%d]\n", taxi_r, taxi_c);
+                }else if((taxi_r > arrivo_r)  && (mappa[taxi_r - 1][taxi_c] != 1)){
+                    taxi_r--;
+                    printf("TAXI[%d][%d]\n", taxi_r, taxi_c);
+                }else if(taxi_r == arrivo_r){
+                    printf("Ho raggiunto la stessa riga\n");
+                    flagR = 0;
+                    break;
+                }else{  //Ostacolo
+                   
+                    if(taxi_c + 1 < SO_WIDTH){
+                        printf("Ostacolo, vado a dx\n");
+                        taxi_c++;
+                    }else if(taxi_c - 1 >= 0){
+                        printf("Ostacolo, vado a sx\n");
+                        taxi_c--;
+                    }
+
+                }
+
+        }   //Fine while righe
+
+        if(taxi_r == arrivo_r && taxi_c == arrivo_c){
+            printf("Arrivo\n");
+            finalflag = 0;
+            break;
+        }else{
+            printf("Continua\n");
+            flagR = 1;
+            flagC = 1;
+        }
+
+    }   //Fine while contenitore
+
+    printf("TAXI[%d][%d]\n", taxi_r, taxi_c);
+
+}
+
 //main:
 int main(int argc, char *argv[]){
 
@@ -138,12 +261,16 @@ int main(int argc, char *argv[]){
     printMap(mappa);
     //Genero celle inaccesibili sulla mappa
     HolesGenerator(mappa);
-    printf("Mappa con buchi\n");
+    //Genero celle sorgenti
+    SourcesGenerator(mappa);
+    //stampo la mappa con i buchi e le sorgenti
     printMap(mappa);  
     printf("i buchi sono: %d\n", SO_HOLES);
+    printf("le sorgenti sono: %d\n", SO_SOURCES);
+    
+    TaxiMover(mappa);
 
     
-
 /*
 SO_HOLES = 0 //verrà incrementato alla generazione di un buco
 e sarà una coppia (1,1), un array che indica riga e colonna
