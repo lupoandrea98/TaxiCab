@@ -38,27 +38,41 @@ void cercaSource(int coordSource[2], struct cella A[SO_HEIGHT][SO_WIDTH]){
 
 //NON C'è BISOGNO DI DARE LA RISPOSTA (OPPURE Sì MA SCRIVIAMO SOLO PRINTF "COMPLETATA", "INEVASA", "ABORTITA" GIUSTO PER CAPIRE NOI),
 //INCREMENTIAMO I RISULTATI QUI PERCHè SARà QUESTO IL PROCESSO MASTER CHE CONSERVA I DATI, QUINDI IL PROCESSO TAXI PRIMA DI FARE L'EXIT 
-void rispondi(const struct queue* richiesta, int msgid) {
+void rispondi(const struct queue* richiesta, int msgid, int valid) {
     struct queue risposta; //nuova struttura coda simmetrica
-
-    sprintf(risposta.msg, "Sono il taxi [pid: %ld], richiesta servita :) ", (long)getpid());
-    risposta.mtype = (*richiesta).mtype; //e come tipo metto il pid del figlio che ha fatto la domanda
-     //invio:
-    if(msgsnd(msgid, &risposta, (sizeof(struct queue)-sizeof(long)-sizeof(int[2])*2-sizeof(struct cella)*SO_WIDTH*SO_HEIGHT), IPC_NOWAIT)== -1){ 
-    EXIT_ON_ERROR
+    if(valid == 1){
+        sprintf(risposta.msg, "Sono il taxi [pid: %ld], richiesta servita :) ", (long)getpid());
+        risposta.mtype = (*richiesta).mtype; //e come tipo metto il pid del figlio che ha fatto la domanda
+        //invio:
+        if(msgsnd(msgid, &risposta, (sizeof(struct queue)-sizeof(long)-sizeof(int[2])*2-sizeof(struct cella)*SO_WIDTH*SO_HEIGHT), IPC_NOWAIT)== -1){ 
+            EXIT_ON_ERROR
+        }
+        // attendo qualche secondo
+        sleep(2);
+    }else{
+        sprintf(risposta.msg, "Sono il Taxi[pid: %ld], richiesta non servita :( ", (long)getpid());
+        risposta.mtype = (*richiesta).mtype;
+        if(msgsnd(msgid, &risposta, (sizeof(struct queue)-sizeof(long)-sizeof(int[2])*2-sizeof(struct cella)*SO_WIDTH*SO_HEIGHT), IPC_NOWAIT)== -1){ 
+            EXIT_ON_ERROR
+        }
+        // attendo qualche secondo
+        sleep(2);
     }
-     // attendo qualche secondo
-    sleep(2);
+    
 }
 
 //DA MODIFICARE, IMPLEMENTARLO CON IL TEMPO E CON IL NUMERO DI SUCCESSI/ABORTITI/ECC...
-int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arrivo_r, int arrivo_c){
+int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arrivo_r, int arrivo_c, long *tempoImpiegato){
+
+    if(*tempoImpiegato > SO_TIMEOUT)
+        return 0;    
 
     int flagR = 1;
     int flagC = 1;
     int finalflag=1;
     int taxi_r = st->coordTaxi[0];
     int taxi_c = st->coordTaxi[1];
+    int valid = 1;      //Flag che controlla il tempo impiegato dal taxi per esaudire la richiesta (Deve essere minore di SO_TIMEOUT)
 
     printf("Partenza [%d][%d]\n", taxi_r, taxi_c);
     printf("Arrivo [%d][%d]\n", arrivo_r, arrivo_c);
@@ -67,7 +81,8 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
         - Tempo di attraversamento delle celle.
         - Aggiungere le nanosleep per il tempo di attraversamento delle celle. 
         - 
-    */                                                      
+    */ 
+                                                    
 
     while(finalflag){
 
@@ -89,6 +104,12 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         st->coordTaxi[1] = taxi_c;
                         st->percorso++;
                         //.....
+                    *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
+                    if(*tempoImpiegato > SO_TIMEOUT){
+                        printf("Richiesta non soddisfatta nei tempi previsti\n");
+                        return 0;
+                    }    
+                    
                 }else if((taxi_c > arrivo_c)  && (mappa[taxi_r][taxi_c - 1].tipo != 1)){
                     //Qui va aggiunta la nanosleep
                     printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
@@ -102,7 +123,13 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         st->coordTaxi[0] = taxi_r;
                         st->coordTaxi[1] = taxi_c;
                         st->percorso++;
+                        *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
+                        if(*tempoImpiegato > SO_TIMEOUT){
+                            printf("Richiesta non soddisfatta nei tempi previsti\n");
+                            return 0;
+                        }
                         //.....
+                    
                 }else if(taxi_c == arrivo_c){
                     //printf("Ok sono nella stessa colonna.\n");
                     flagC = 0;
@@ -123,7 +150,11 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         st->coordTaxi[1] = taxi_c;
                         st->percorso++;
                         //..... 
-                        
+                        *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
+                        if(*tempoImpiegato > SO_TIMEOUT){
+                            printf("Richiesta non soddisfatta nei tempi previsti\n");
+                            return 0;
+                        }
                     }else if(taxi_r - 1 >= 0){
                         //Qui va aggiunta la nanosleep
                         printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
@@ -137,7 +168,12 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         st->coordTaxi[0] = taxi_r;
                         st->coordTaxi[1] = taxi_c;
                         st->percorso++;
-                        //.....                    
+                        //.....   
+                        *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
+                        if(*tempoImpiegato > SO_TIMEOUT){
+                            printf("Richiesta non soddisfatta nei tempi previsti\n");
+                            return 0;
+                        }                
                     }
                 }
 
@@ -158,7 +194,11 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                 st->coordTaxi[1] = taxi_c;
                 st->percorso++;
                 //..... 
-
+                *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
+                if(*tempoImpiegato > SO_TIMEOUT){
+                    printf("Richiesta non soddisfatta nei tempi previsti\n");
+                    return 0;
+                }
             }else if((taxi_r > arrivo_r)  && (mappa[taxi_r - 1][taxi_c].tipo != 1)){
                 
                 printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
@@ -172,7 +212,12 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
   		        st->coordTaxi[0] = taxi_r;
                 st->coordTaxi[1] = taxi_c;
                 st->percorso++;
-                //..... 
+                //.....
+                *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
+                if(*tempoImpiegato > SO_TIMEOUT){
+                    printf("Richiesta non soddisfatta nei tempi previsti\n");
+                    return 0;
+                }
 
             }else if(taxi_r == arrivo_r){
 
@@ -194,7 +239,12 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                     st->coordTaxi[0] = taxi_r;
                     st->coordTaxi[1] = taxi_c;
                     st->percorso++;
-                    //.....  
+                    //..... 
+                    *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
+                    if(*tempoImpiegato > SO_TIMEOUT){
+                        printf("Richiesta non soddisfatta nei tempi previsti\n");
+                        return 0;
+                    }
 
                 }else if(taxi_c - 1 >= 0){
                     printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
@@ -208,7 +258,13 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                     st->coordTaxi[0] = taxi_r;
                     st->coordTaxi[1] = taxi_c;
                     st->percorso++;
-                    //..... 
+                    *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
+                    if(*tempoImpiegato > SO_TIMEOUT){
+                        printf("Richiesta non soddisfatta nei tempi previsti\n");
+                        return 0;
+                    }
+                    //.....
+                     
                 }
             }
         }   //Fine while righe

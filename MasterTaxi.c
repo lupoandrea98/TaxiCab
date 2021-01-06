@@ -19,8 +19,11 @@ int main(int argc, char *argv[]){
     long richPiuRaccolte[2] = {0,0}; //TaxiPiuStrada[0] il numero di richieste più raccolte  TaxiPiuStrada[1] il relativo pid del taxi 
     //prima della fine di ogni taxi vengono fatti i confronti e aggiornati questi buffer, che conterranno appunto "i record" dei taxi
     struct taxi infoTaxi;
-    SO_TIMEOUT = 10000;
-        
+    int valid;      //Flag che controlla se la richiesta è stata soddisfatta o meno (1 = soddisfatta | 0 = insoddisfatta)
+    SO_TIMEOUT = rand() % 10000;
+    long tempoImpiegato;
+    int i;
+    printf("Il tempo massimo consentito per soddisfare una richiesta in questa simulazione è: %d", SO_TIMEOUT);
     //creo la coda
     if((msgid = msgget(MSGKEY, 0666 | IPC_CREAT))== -1) 
        EXIT_ON_ERROR 
@@ -42,7 +45,8 @@ int main(int argc, char *argv[]){
             exit(EXIT_FAILURE);
             
         }
-
+        //for(i=0;i<2;i++){
+            
             switch(fork()){ //solo 1 volta xk 1 taxi, SE NO SO_TAXI VOLTE
 
                 case -1: EXIT_ON_ERROR
@@ -56,7 +60,7 @@ int main(int argc, char *argv[]){
                     infoTaxi.percorso = 0;
                     infoTaxi.viaggioPiuLungo = 0;
                     infoTaxi.richiesteRacc = 0;
-                    
+                    tempoImpiegato = 0;
                     
                     printf("partenza taxi [%d][%d]\n", infoTaxi.coordTaxi[0], infoTaxi.coordTaxi[1]);
                     printf("sorgente [%d][%d]\n", coordSource[0], coordSource[1]);
@@ -64,30 +68,31 @@ int main(int argc, char *argv[]){
                     printf("e ho ricevuto una richiesta da %ld. La destinzazione è [%d][%d]\n", coda.mtype ,coda.arrivo[0], coda.arrivo[1]);
                     infoTaxi.richiesteRacc++;
 
-                    //controllo se il taxi è giò sulle sources
+                    //controllo se il taxi è già sulle sources
                     if((infoTaxi.coordTaxi[0] == coordSource[0]) && (infoTaxi.coordTaxi[1] == coordSource[1])){     //Se le coordinate sono diverse, faccio raggiungere la sorgente dal taxi
                         
                         printf("Il taxi [%ld] è già sulla sorgente.\n", (long)getpid());   
+
                     }else{
                         
                         printf("Il taxi [%ld] non è sulla sorgente e la raggiunge.\n", (long)getpid()); 
-                        if(TaxiMover(mappa, &infoTaxi, coordSource[0], coordSource[1])==1){
+                        if(valid = TaxiMover(mappa, &infoTaxi, coordSource[0], coordSource[1], &tempoImpiegato) == 1){                            
                             printf("Ora il taxi [%ld] è sulla sorgente.\n", (long)getpid()); 
                         }
-                        else{
-                            EXIT_ON_ERROR
+                        else{                            
+                            rispondi(&coda, msgid, valid);          //Nel caso in cui valid è zero, informo che la richiesta non è stata soddisfatta
                         }  
                     }
 
-                    if(TaxiMover(mappa, &infoTaxi, coda.arrivo[0], coda.arrivo[1])==1){
-                            printf("Il taxi [%ld] è arrivato a destinazione.\n", (long)getpid());
-                            rispondi(&coda, msgid); //in base al successo/aborto/ecc, da modificare
-                            
-                        }
-                        else{
-                            EXIT_ON_ERROR
-                        }  
-
+                    if(valid = TaxiMover(mappa, &infoTaxi, coda.arrivo[0], coda.arrivo[1], &tempoImpiegato) == 1){
+                        printf("Il taxi [%ld] è arrivato a destinazione.\n", (long)getpid());
+                        rispondi(&coda, msgid, valid); //in base al successo/aborto/ecc, da modificare
+                    }
+                    else{
+                        rispondi(&coda, msgid, valid);
+                    }  
+                    //qui riporto a zero il tempoImpiegato per le prossime richieste.
+                    tempoImpiegato = 0;
                     //DEVO FARE I CONFRONTI E AGGIORNARE GLI ARRAY DEI RECORD!
                     printf("Celle percorse dal taxi: %d & Richieste raccolte: %d\n", infoTaxi.percorso, infoTaxi.richiesteRacc);
                     exit(EXIT_SUCCESS);
@@ -98,7 +103,26 @@ int main(int argc, char *argv[]){
             
             } //fine fork taxi
 
+        /*
+            IMPORTANTE: -  Dobbiamo mandare la mappa aggiornata quando un taxi termina il suo compito.
+                        -  Dobbiamo mettre la msgrcv all'interno del for in modo tale che ogni taxi nuovo, riceva la mappa aggiornata 
+                            con nuove richieste, ed evitando che si sovrappongano richieste già effettuate.
+
+                        -    
+
+        
+        
+        */
+
+
+
+        //}
         } //fine else
+    /*for(i=0;i<2;i++){
+        printf("il taxi[%d] ha terminato\n", wait(NULL));
+    }
+    */
+
     //deallochiamo la coda
     if(msgctl(msgid, IPC_RMID, 0) == -1){
        EXIT_ON_ERROR
