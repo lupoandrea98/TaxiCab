@@ -28,6 +28,8 @@
 
 #define MSGKEY 151297 //per la coda di messaggi
 #define SHMKEY 130198 //per la memoria condivisa 
+#define SMFKEY 281305 //per il semaforo
+
 
 #define MSIZE 256
 

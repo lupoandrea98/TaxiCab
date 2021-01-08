@@ -31,12 +31,6 @@ void handler(int sig){
 
 int main(){
 
-    //DA METTERE POI NELLE FUNZIONI DI GENERAZIONE
-    SO_HOLES = 0; //numero celle inaccessibili (<= W x H)
-    SO_SOURCES = 0; //num celle origine taxi (<= W x H - HOLES )
-    SO_TAXI = 0;
-    SO_TOP_CELLS = 0; //Valore che deve contenere il massimo di numVolteAttr presente nella struct cella.
-
     //creazione memoria condivisa
     if((dataId = shmget(SHMKEY, (sizeof(struct cella)*SO_HEIGHT*SO_WIDTH + sizeof(int)*2), IPC_CREAT | 0666))==-1){ //creazione shm
         EXIT_ON_ERROR

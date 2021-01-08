@@ -4,10 +4,11 @@
 
 int main(int argc, char *argv[]){
 
-    int msgid,dataId;
+    int msgid,dataId,semid;
     struct queue coda;
     struct data* ptMemCond;
     struct taxi infoTaxi;
+   
     
     //viaggi. Numeri di: (la somma di queste 3 variabili mi dà il numero di viaggi totali di tutti i taxi, mi servirà per la stampa finale)
     int tripSuccess = 0; //richieste completate con successo
@@ -24,6 +25,16 @@ int main(int argc, char *argv[]){
     SO_TIMEOUT = rand() % 10000;
     int i;
 
+    //creo il semaforo
+  if((semid = semget(SMFKEY, 1, IPC_CREAT | 0666)) == -1){ //ipc_private crea e mette una chiave a caso, 1 è solo per un set di semafori
+    EXIT_ON_ERROR
+  }
+  // inizializzazione del semaforo
+  if(initSemAvailable(semid, 0) <0){
+    EXIT_ON_ERROR
+  }
+  
+    
     
     //da sistemare.
     printf("Il tempo massimo consentito per soddisfare una richiesta in questa simulazione è: %ld\n", SO_TIMEOUT);
@@ -61,6 +72,10 @@ int main(int argc, char *argv[]){
         EXIT_ON_ERROR //il messaggio ricevuto non esiste, errore 
 
     } 
+
+
+
+
         //for(i=0;i<2;i++){
             
             switch(fork()){ //solo 1 volta xk 1 taxi, SE NO SO_TAXI VOLTE
@@ -82,7 +97,11 @@ int main(int argc, char *argv[]){
                     printf("sorgente [%d][%d]\n", coda.partenza[0], coda.partenza[1]);
                     printf("e ho ricevuto una richiesta da %ld. La destinazione è [%d][%d]\n", coda.mtype ,coda.arrivo[0], coda.arrivo[1]);
                     infoTaxi.richiesteRacc++;
-
+                    
+                    //*************INIZIO SEZIONE CRITICA**************************
+                    if(reserveSem(semid, 0)==-1){ //PRENOTO
+                     EXIT_ON_ERROR
+                    }
                     //controllo se il taxi è già sulle sources
                     if((infoTaxi.coordTaxi[0] == coda.partenza[0]) && (infoTaxi.coordTaxi[1] == coda.partenza[1])){     //Se le coordinate sono diverse, faccio raggiungere la sorgente dal taxi
                         
@@ -106,7 +125,12 @@ int main(int argc, char *argv[]){
                     else{
                         rispondi(&coda, msgid, valid);
                     }  
-                    
+
+
+                    if(releaseSem(semid,0)==-1){ //RILASCIO
+                        EXIT_ON_ERROR
+                    }
+                    //*************FINE SEZIONE CRITICA**************************
                     //DEVO FARE I CONFRONTI E AGGIORNARE GLI ARRAY DEI RECORD!
                     printf("Celle percorse dal taxi: %d & Richieste raccolte: %d\n", infoTaxi.percorso, infoTaxi.richiesteRacc);
                     exit(EXIT_SUCCESS);
@@ -122,13 +146,12 @@ int main(int argc, char *argv[]){
         printf("il taxi[%d] ha terminato\n", wait(NULL));
     }
     */
-
+sleep(10);
     //deallochiamo la coda
     if(msgctl(msgid, IPC_RMID, 0) == -1){
        EXIT_ON_ERROR
     }
 
 
-    
     exit(EXIT_SUCCESS);
 }
