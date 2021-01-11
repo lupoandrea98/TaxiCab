@@ -1,12 +1,5 @@
 #include "TaxiFunctions.h"
 //PROGRAMMA DI SIMULAZIONE CHE GENERA E INIZIALIZZA LA MAPPA (MESSA IN MEMORIA CONDIVISA), FORKA SO_SOURCES E GESTISCE LE RICHIESTE DI TAXI
-//GESTIONE DEI NOSTRI SEGNALI CHE SCRIVONO RICHIESTE NELLA CODA
-//GESTIONE DEI SEMAFORI PER LE CELLE OCCUPATE(?)
-
-int codaId, dataId, i;
-struct queue coda;
-struct data* ptMemCond;
-struct source infoSource;
 
 
 void handler(int sig){
@@ -19,27 +12,42 @@ void handler(int sig){
         coda.partenza[1] = infoSource.coordSource[1];
         coda.mtype = (long) getpid();
         getCellaArrivo(ptMemCond->mappa, &coda); //metodo che mi dà random delle coordinate di arrivo e me le scrive nella coda di messaggi
-        printf("arrivo è [%d][%d]\n", coda.arrivo[0], coda.arrivo[1]);
+        printf("Richiesta! Destinazione: [%d][%d]\n", coda.arrivo[0], coda.arrivo[1]);
         //invio alla coda
-        if(msgsnd(codaId, &coda, sizeof(coda), IPC_NOWAIT)== -1){
+        if(msgsnd(codaid, &coda, sizeof(struct queue), IPC_NOWAIT)== -1){
             EXIT_ON_ERROR
         }
+        printf("Messaggio inviato correttamente.\n");
 
+    }else if(sig == SIGTERM){
+        printf("Simulazione terminata!\n");
+        exit(EXIT_SUCCESS);
     }
 
 }
 
 int main(){
 
-    //creazione memoria condivisa
-    if((dataId = shmget(SHMKEY, (sizeof(struct cella)*SO_HEIGHT*SO_WIDTH + sizeof(int)*2), IPC_CREAT | 0666))==-1){ //creazione shm
+    int i; 
+    //tutte le altre definizioni (visto che sono pure in comune tra i 3 programmi), sono nell'header!
+
+    //prelevo ID memoria condivisa
+    if((dataid = shmget(SHMKEY, (sizeof(struct cella)*SO_HEIGHT*SO_WIDTH + sizeof(int)*3+ sizeof(long)*2), 0666))==-1){ 
+        EXIT_ON_ERROR
+    }
+  
+    //attacco alla memoria condivisa 
+    if((ptMemCond = (struct data*)shmat(dataid, NULL, 0))==(void*)-1){ //attacco segmento
         EXIT_ON_ERROR
     }
 
-    //attacco alla memoria condivisa 
-    if((ptMemCond = (struct data*)shmat(dataId, NULL, 0))==(void*)-1){ //attacco segmento
-        EXIT_ON_ERROR
+    //creo la coda
+    if((codaid = msgget(MSGKEY, 0666 | IPC_CREAT))== -1){
+       EXIT_ON_ERROR 
     }
+
+    SO_DURATION = 20;
+    ptMemCond->durataSimu = SO_DURATION;
 
     mapGenerator(ptMemCond->mappa);
 
@@ -61,15 +69,22 @@ int main(){
    //controllo che le sorgenti o i taxi non siano 0
     if((SO_SOURCES == 0) || (SO_TAXI == 0)){ //se il numero random ha dato 0, terminiamo la simulazione
         printf("Mi spiace ma al momento non ci sono richieste o taxi disponibili, fine simulazione.\n");
-      
         exit(EXIT_FAILURE);
     } 
 
-    //si attacca alla coda di messaggi
-    if((codaId = msgget(MSGKEY, 0 ))==-1){ //mi aggancio alla coda (0 xk non mi interessano i flag)
-        EXIT_ON_ERROR   
-    } 
+    ptMemCond->SourcePid = (long) getpid();
+
+    if(signal(SIGTERM, handler) == SIG_ERR){
+        EXIT_ON_ERROR
+    }
+    if(signal(SIGALRM, handler) == SIG_ERR){
+        EXIT_ON_ERROR
+    }
+    if(signal(SIGINT, handler) == SIG_ERR){
+        EXIT_ON_ERROR
+    }    
     
+
     //forko una volta xk 1 SOURCE di prova, ma dovrò forkare SO_SOURCE volte!
     switch(fork()){
 
@@ -77,19 +92,19 @@ int main(){
             EXIT_ON_ERROR
 
         case 0: //è il figlio (RICHIESTA TAXI)   
-            
-            while(SO_DURATION>0){
-                alarm(5);
-                if(signal(SIGALRM, handler) == SIG_ERR){
-                    EXIT_ON_ERROR
-                }
-                sleep(2);
+       
+    
+            while(ptMemCond->durataSimu>0){
+                sleep(4);
+                kill(getpid(), SIGALRM);
+                
+                /*sleep(2);
                 //riceve risposta dal taxi
                 if(msgrcv(codaId, &coda, sizeof(coda), getpid(), 0) == -1){ 
                     EXIT_ON_ERROR
                 }
                 printf("Risposta ricevuta! Il figlio del server mi ha scritto '%s'\n", coda.msg);   
-                SO_DURATION -= 7;
+                */
             }     
                
              //6.Ricevuta la risposta termina.
@@ -100,9 +115,8 @@ int main(){
             sleep(2);
 
     }
-      
+//A cosa serve questa sleep?
+//sleep(5);
 
-//deallochiamo la memoria condivisa
-shmctl(dataId, IPC_RMID,0); 
 exit(EXIT_SUCCESS);
 }

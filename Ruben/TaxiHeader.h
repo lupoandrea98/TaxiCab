@@ -95,7 +95,6 @@ struct data{
    long TaxiPid;
    long SourcePid;
    int durataSimu;
-
 };
 
 //Ho bisogno di definire questa struct perchè su linux al contrario di macOS non basta importare la libreria dei semafori.

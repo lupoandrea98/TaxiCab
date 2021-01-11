@@ -62,9 +62,6 @@ void rispondi(const struct queue* richiesta, int msgid, int valid) {
 
 //DA MODIFICARE, IMPLEMENTARLO CON IL TEMPO E CON IL NUMERO DI SUCCESSI/ABORTITI/ECC...
 int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arrivo_r, int arrivo_c, long *tempoImpiegato){
-    /*
-        
-    */
 
     if(*tempoImpiegato > SO_TIMEOUT)
         return 0;    
@@ -79,22 +76,24 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
     printf("Partenza [%d][%d]\n", taxi_r, taxi_c);
     printf("Arrivo [%d][%d]\n", arrivo_r, arrivo_c);
 
-                                                    
+      
+                                                   
     while(finalflag){
-
+        
         while(taxi_r<SO_HEIGHT && flagR){   //Righe
-
+    
             while(taxi_c<SO_WIDTH && flagC){    //Colonne
                 
                 if((taxi_c < arrivo_c) && (mappa[taxi_r][taxi_c + 1].tipo != 1 )){
                     //SEMAFORO IN
-                    
-                    if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1)
+                    printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                    if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
+                    }
                     taxi_c++;
                     printf("Mi sposto a dx: TAXI[%d][%d]\n", taxi_r, taxi_c);
                         //implementare capacità, semafori, ecc...
-                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                        
                         mappa[taxi_r][taxi_c-1].numTaxiPresenti--;
                         mappa[taxi_r][taxi_c].numVolteAttr++;
                         st->coordTaxi[0] = taxi_r;
@@ -119,8 +118,8 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                                 mappa[taxi_r][taxi_c].carattere = '*';
                             }
                         }
+                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
                     //SEMAFORO OUT
-                    
                     *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                     if(*tempoImpiegato > SO_TIMEOUT){
                         printf("Richiesta non soddisfatta nei tempi previsti\n");
@@ -129,13 +128,14 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                     
                 }else if((taxi_c > arrivo_c)  && (mappa[taxi_r][taxi_c - 1].tipo != 1)){
                     //Qui va aggiunta la nanosleep
-                    
-                    if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1)
+                    printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                    if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
+                    }
                     taxi_c--;
                     printf("Mi sposto a sx: TAXI[%d][%d]\n", taxi_r, taxi_c);
                         //implementare capacità, semafori, ecc...
-                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                        
                         mappa[taxi_r][taxi_c+1].numTaxiPresenti--;
                         mappa[taxi_r][taxi_c].numVolteAttr++;
                         st->coordTaxi[0] = taxi_r;
@@ -164,6 +164,7 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                                 mappa[taxi_r][taxi_c].carattere = '*';
                             }
                         }
+                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
                         //.....
                     
                 }else if(taxi_c == arrivo_c){
@@ -174,13 +175,14 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
 
                     if(taxi_r + 1 < SO_HEIGHT){
                         //Qui va aggiunta la nanosleep
-                        
-                        if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1)
+                        printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                        if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                             EXIT_ON_ERROR
+                        }
                         taxi_r++;
                         printf("Ostacolo, vado in basso: TAXI[%d][%d]\n", taxi_r, taxi_c);
                          //implementare capacità, semafori, ecc...
-                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                        
                         mappa[taxi_r-1][taxi_c].numTaxiPresenti--;
                         mappa[taxi_r][taxi_c].numVolteAttr++;
                         st->coordTaxi[0] = taxi_r;
@@ -204,6 +206,7 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                                 mappa[taxi_r][taxi_c].carattere = '*';
                             }
                         }
+                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
                         //..... 
                         *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                         if(*tempoImpiegato > SO_TIMEOUT){
@@ -212,13 +215,14 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         }
                     }else if(taxi_r - 1 >= 0){
                         //Qui va aggiunta la nanosleep
-                        
-                        if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1)
+                        printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                        if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                             EXIT_ON_ERROR
+                        }
                         taxi_r--;
                         printf("Ostacolo, vado in alto: TAXI[%d][%d]\n", taxi_r, taxi_c);
                           //implementare capacità, semafori, ecc...
-                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                        
                         mappa[taxi_r+1][taxi_c].numTaxiPresenti--;
                         mappa[taxi_r][taxi_c].numVolteAttr++;
                         st->coordTaxi[0] = taxi_r;
@@ -242,6 +246,7 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                                 mappa[taxi_r][taxi_c].carattere = '*';
                             }
                         }
+                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
                         //.....   
                         *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                         if(*tempoImpiegato > SO_TIMEOUT){
@@ -256,13 +261,14 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
             if((taxi_r < arrivo_r)  && (mappa[taxi_r + 1][taxi_c].tipo != 1)){
 
                 //Qui va aggiunta la nanosleep
-                
-                if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1)
+                printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                     EXIT_ON_ERROR
+                }
                 taxi_r++;
                 printf("Mi sposto in basso: TAXI[%d][%d]\n", taxi_r, taxi_c);
                 //implementare capacità, semafori, ecc...
-                mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                
                 mappa[taxi_r-1][taxi_c].numTaxiPresenti--;
                 mappa[taxi_r][taxi_c].numVolteAttr++;
   		        st->coordTaxi[0] = taxi_r;
@@ -278,14 +284,16 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                     }
                 }
                 if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
-                            if(mappa[taxi_r][taxi_c].tipo == 0){            //CELLA VUOTA    
-                                mappa[taxi_r][taxi_c].tipo = 3;
-                                mappa[taxi_r][taxi_c].carattere = '*';
-                            }else if(mappa[taxi_r][taxi_c].tipo == 2){      //CELLA CON SORGENTE
-                                mappa[taxi_r][taxi_c].tipo = 4;
-                                mappa[taxi_r][taxi_c].carattere = '*';
-                            }
-                        }
+                    if(mappa[taxi_r][taxi_c].tipo == 0){            //CELLA VUOTA    
+                        mappa[taxi_r][taxi_c].tipo = 3;
+                        mappa[taxi_r][taxi_c].carattere = '*';
+                    }else if(mappa[taxi_r][taxi_c].tipo == 2){      //CELLA CON SORGENTE
+                        mappa[taxi_r][taxi_c].tipo = 4;
+                        mappa[taxi_r][taxi_c].carattere = '*';
+                    }
+                    
+                }
+                mappa[taxi_r][taxi_c].numTaxiPresenti++;
                 //..... 
                 *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                 if(*tempoImpiegato > SO_TIMEOUT){
@@ -294,13 +302,14 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                 }
             }else if((taxi_r > arrivo_r)  && (mappa[taxi_r - 1][taxi_c].tipo != 1)){
                 
-                
-                if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1)
+                printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                     EXIT_ON_ERROR
+                }
                 taxi_r--;
                 printf("Mi sposto in alto: TAXI[%d][%d]\n", taxi_r, taxi_c);
                 //implementare capacità, semafori, ecc...
-                mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                
                 mappa[taxi_r+1][taxi_c].numTaxiPresenti--;
                 mappa[taxi_r][taxi_c].numVolteAttr++;
   		        st->coordTaxi[0] = taxi_r;
@@ -324,6 +333,7 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         mappa[taxi_r][taxi_c].carattere = '*';
                     }
                 }
+                mappa[taxi_r][taxi_c].numTaxiPresenti++;
                 //.....
                 *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                 if(*tempoImpiegato > SO_TIMEOUT){
@@ -340,13 +350,14 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
             }else{  //Ostacolo
                    
                 if(taxi_c + 1 < SO_WIDTH){
-                    
-                    if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1)
+                    printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                    if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
+                    }
                     taxi_c++;
                     printf("Ostacolo, vado a dx: TAXI[%d][%d]\n", taxi_r, taxi_c); 
                     //implementare capacità, semafori, ecc...
-                    mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                    
                     mappa[taxi_r][taxi_c-1].numTaxiPresenti--;
                     mappa[taxi_r][taxi_c].numVolteAttr++;
                     st->coordTaxi[0] = taxi_r;
@@ -370,6 +381,7 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                             mappa[taxi_r][taxi_c].carattere = '*';
                         }
                     }
+                    mappa[taxi_r][taxi_c].numTaxiPresenti++;
                     //..... 
                     *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                     if(*tempoImpiegato > SO_TIMEOUT){
@@ -378,13 +390,14 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                     }
 
                 }else if(taxi_c - 1 >= 0){
-                    
-                    if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1)
+                    printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                    if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
+                    }
                     taxi_c--;
                     printf("Ostacolo, vado a sx: TAXI[%d][%d]\n", taxi_r, taxi_c);
                     //implementare capacità, semafori, ecc...
-                    mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                    
                     mappa[taxi_r][taxi_c+1].numTaxiPresenti--;
                     mappa[taxi_r][taxi_c].numVolteAttr++;
                     st->coordTaxi[0] = taxi_r;
@@ -408,11 +421,13 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                             mappa[taxi_r][taxi_c].carattere = '*';
                         }
                     }
+                    mappa[taxi_r][taxi_c].numTaxiPresenti++;
                     *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                     if(*tempoImpiegato > SO_TIMEOUT){
                         printf("Richiesta non soddisfatta nei tempi previsti\n");
                         return 0;
                     }
+
                     //.....
                      
                 }
