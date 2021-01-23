@@ -55,15 +55,6 @@ int main(){
         EXIT_ON_ERROR     
     }
 
-    //controllo che le sorgenti o i taxi non siano 0
-    //Lasciamo al Master questo controllo.
-    /*if((SO_SOURCES == 0) || (SO_TAXI == 0)){ //se il numero random ha dato 0, terminiamo la simulazione
-        printf("Mi spiace ma al momento non ci sono richieste o taxi disponibili, fine simulazione.\n");
-        kill(ptMemCond->TaxiPid, SIGTERM);
-        exit(EXIT_FAILURE);
-    } 
-    */
-
     ptMemCond->SourcePid = (long) getpgid(getpid()); //per avere arichviato il pid del padre SOURCE
 
     if(signal(SIGTERM, handlerSource) == SIG_ERR){
@@ -117,7 +108,6 @@ int main(){
         EXIT_ON_ERROR
     }
    // }
-
 
 exit(EXIT_SUCCESS);
 

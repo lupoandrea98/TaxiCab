@@ -1,24 +1,28 @@
 #include "TaxiHeader.h"
 
 //==============================================================================================================
-//                                           FUNZIONI MASTER TAXI
+//                                           FUNZIONI TAXI
 //==============================================================================================================
+void reset(){               //Alternativa alla macro RESET presente nell'header
+    printf("\033[0m");
+}
+void calcolaMax(struct data* pt , struct taxi *taxi){
+  
+  if(pt->TaxiPiuStrada[0]<taxi->percorso){
+      pt->TaxiPiuStrada[0] = taxi->percorso;
+      pt->TaxiPiuStrada[1] = taxi->pid;
+  }
 
-void cercaTaxi(struct taxi *st, struct cella A[SO_HEIGHT][SO_WIDTH]){ 
-//metodo che scorre tutta la mappa e mi restituisce un array di coordinate dove si trova un taxi
-    int r,c;
-    int flag = 1;
+  if(pt->tripPiuLungo[0]<taxi->tempoImpiegato){
+      pt->tripPiuLungo[0] = taxi->tempoImpiegato;
+      pt->tripPiuLungo[1] = taxi->pid;
+  }
 
-    while(flag){
-        r = rand() %SO_HEIGHT;
-        c = rand() %SO_WIDTH; 
-
-        if((A[r][c].tipo ==3) || (A[r][c].tipo == 4)){
-            st->coordTaxi[0] = r;
-            st->coordTaxi[1] = c;
-            flag = 0;
-        }
-    }
+  if(pt->richPiuRaccolte[0]<taxi->richiesteRacc){
+      pt->richPiuRaccolte[0] = taxi->richiesteRacc;
+      pt->richPiuRaccolte[1] = taxi->pid;
+  }
+       
 }
 
 void cercaSource(struct source *st, struct cella A[SO_HEIGHT][SO_WIDTH]){ 
@@ -74,9 +78,7 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
     int valid = 1;      //Flag che controlla il tempo impiegato dal taxi per esaudire la richiesta (Deve essere minore di SO_TIMEOUT)
 
     printf("Partenza [%d][%d]\n", taxi_r, taxi_c);
-    printf("Arrivo [%d][%d]\n", arrivo_r, arrivo_c);
-
-      
+    printf("Arrivo [%d][%d]\n", arrivo_r, arrivo_c); 
                                                    
     while(finalflag){
         
@@ -85,49 +87,69 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
             while(taxi_c<SO_WIDTH && flagC){    //Colonne
                 
                 if((taxi_c < arrivo_c) && (mappa[taxi_r][taxi_c + 1].tipo != 1 )){
-                    //SEMAFORO IN
+                    if(reserveSem(semid, 0) == -1){     //Decremento semaforo.
+                        EXIT_ON_ERROR
+                    }  
                     printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
                     if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
                     }
                     taxi_c++;
                     printf("Mi sposto a dx: TAXI[%d][%d]\n", taxi_r, taxi_c);
-                        //implementare capacità, semafori, ecc...
-                        
-                        mappa[taxi_r][taxi_c-1].numTaxiPresenti--;
-                        mappa[taxi_r][taxi_c].numVolteAttr++;
-                        st->coordTaxi[0] = taxi_r;
-                        st->coordTaxi[1] = taxi_c;
-                        st->percorso++;
-                        //Modifiche ai dati della mappa per la stampa
-                        if(mappa[taxi_r][taxi_c-1].numTaxiPresenti == 0){
-                            if(mappa[taxi_r][taxi_c-1].tipo == 3){          //CELLA SOLO DI TAXI
-                                mappa[taxi_r][taxi_c-1].tipo = 0;
-                                mappa[taxi_r][taxi_c-1].carattere = '0';
-                            }else if(mappa[taxi_r][taxi_c-1].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
-                                mappa[taxi_r][taxi_c-1].tipo = 2;
-                                mappa[taxi_r][taxi_c-1].carattere = 'S';
-                            }
+                    //implementare capacità, semafori, ecc...
+                    
+                    mappa[taxi_r][taxi_c-1].numTaxiPresenti--;
+                    mappa[taxi_r][taxi_c].numVolteAttr++;
+                    st->coordTaxi[0] = taxi_r;
+                    st->coordTaxi[1] = taxi_c;
+                    st->percorso++;
+                    //Modifiche ai dati della mappa per la stampa
+                    if(mappa[taxi_r][taxi_c-1].numTaxiPresenti == 0){
+                        if(mappa[taxi_r][taxi_c-1].tipo == 3){          //CELLA SOLO DI TAXI
+                            mappa[taxi_r][taxi_c-1].tipo = 0;
+                            mappa[taxi_r][taxi_c-1].carattere = '0';
+                        }else if(mappa[taxi_r][taxi_c-1].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
+                            mappa[taxi_r][taxi_c-1].tipo = 2;
+                            mappa[taxi_r][taxi_c-1].carattere = 'S';
                         }
-                        if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
-                            if(mappa[taxi_r][taxi_c].tipo == 0){            //CELLA VUOTA    
-                                mappa[taxi_r][taxi_c].tipo = 3;
-                                mappa[taxi_r][taxi_c].carattere = '*';
-                            }else if(mappa[taxi_r][taxi_c].tipo == 2){      //CELLA CON SORGENTE
-                                mappa[taxi_r][taxi_c].tipo = 4;
-                                mappa[taxi_r][taxi_c].carattere = '*';
-                            }
+                    }
+                    if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                        if(mappa[taxi_r][taxi_c].tipo == 0){            //CELLA VUOTA    
+                            mappa[taxi_r][taxi_c].tipo = 3;
+                            mappa[taxi_r][taxi_c].carattere = '*';
+                        }else if(mappa[taxi_r][taxi_c].tipo == 2){      //CELLA CON SORGENTE
+                            mappa[taxi_r][taxi_c].tipo = 4;
+                            mappa[taxi_r][taxi_c].carattere = '*';
                         }
-                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
-                    //SEMAFORO OUT
+                    }
+                    mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                
                     *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                     if(*tempoImpiegato > SO_TIMEOUT){
+                        mappa[taxi_r][taxi_c].numTaxiPresenti--;
+                        if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                            if(mappa[taxi_r][taxi_c].tipo == 3){          //CELLA SOLO DI TAXI
+                                mappa[taxi_r][taxi_c].tipo = 0;
+                                mappa[taxi_r][taxi_c].carattere = '0';
+                            }else if(mappa[taxi_r][taxi_c].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
+                                mappa[taxi_r][taxi_c].tipo = 2;
+                                mappa[taxi_r][taxi_c].carattere = 'S';
+                            }
+                        }
                         printf("Richiesta non soddisfatta nei tempi previsti\n");
+                        if(releaseSem(semid, 0) == -1){    //Incremento semaforo.
+                            EXIT_ON_ERROR
+                        }
                         return 0;
                     }    
-                    
+                //SEMAFORO OUT
+                    if(releaseSem(semid, 0) == -1){    //Incremento semaforo.
+                        EXIT_ON_ERROR
+                    }
                 }else if((taxi_c > arrivo_c)  && (mappa[taxi_r][taxi_c - 1].tipo != 1)){
-                    //Qui va aggiunta la nanosleep
+                    if(reserveSem(semid, 1) == -1){     //Decremento semaforo.
+                        EXIT_ON_ERROR
+                    }
                     printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
                     if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
@@ -136,45 +158,63 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                     printf("Mi sposto a sx: TAXI[%d][%d]\n", taxi_r, taxi_c);
                         //implementare capacità, semafori, ecc...
                         
-                        mappa[taxi_r][taxi_c+1].numTaxiPresenti--;
-                        mappa[taxi_r][taxi_c].numVolteAttr++;
-                        st->coordTaxi[0] = taxi_r;
-                        st->coordTaxi[1] = taxi_c;
-                        st->percorso++;
-                        *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
-                        if(*tempoImpiegato > SO_TIMEOUT){
-                            printf("Richiesta non soddisfatta nei tempi previsti\n");
-                            return 0;
-                        }
-                        if(mappa[taxi_r][taxi_c+1].numTaxiPresenti == 0){
-                            if(mappa[taxi_r][taxi_c+1].tipo == 3){
-                                mappa[taxi_r][taxi_c+1].tipo = 0;
-                                mappa[taxi_r][taxi_c+1].carattere = '0';
-                            }else if(mappa[taxi_r][taxi_c+1].tipo == 4){
-                                mappa[taxi_r][taxi_c+1].tipo = 2;
-                                mappa[taxi_r][taxi_c+1].carattere = 'S';
-                            }
-                        }
-                        if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
-                            if(mappa[taxi_r][taxi_c].tipo == 0){            //CELLA VUOTA    
-                                mappa[taxi_r][taxi_c].tipo = 3;
-                                mappa[taxi_r][taxi_c].carattere = '*';
-                            }else if(mappa[taxi_r][taxi_c].tipo == 2){      //CELLA CON SORGENTE
-                                mappa[taxi_r][taxi_c].tipo = 4;
-                                mappa[taxi_r][taxi_c].carattere = '*';
-                            }
-                        }
-                        mappa[taxi_r][taxi_c].numTaxiPresenti++;
-                        //.....
+                    mappa[taxi_r][taxi_c+1].numTaxiPresenti--;
+                    mappa[taxi_r][taxi_c].numVolteAttr++;
+                    st->coordTaxi[0] = taxi_r;
+                    st->coordTaxi[1] = taxi_c;
+                    st->percorso++;
                     
+                    if(mappa[taxi_r][taxi_c+1].numTaxiPresenti == 0){
+                        if(mappa[taxi_r][taxi_c+1].tipo == 3){
+                            mappa[taxi_r][taxi_c+1].tipo = 0;
+                            mappa[taxi_r][taxi_c+1].carattere = '0';
+                        }else if(mappa[taxi_r][taxi_c+1].tipo == 4){
+                            mappa[taxi_r][taxi_c+1].tipo = 2;
+                            mappa[taxi_r][taxi_c+1].carattere = 'S';
+                        }
+                    }
+                    if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                        if(mappa[taxi_r][taxi_c].tipo == 0){            //CELLA VUOTA    
+                            mappa[taxi_r][taxi_c].tipo = 3;
+                            mappa[taxi_r][taxi_c].carattere = '*';
+                        }else if(mappa[taxi_r][taxi_c].tipo == 2){      //CELLA CON SORGENTE
+                            mappa[taxi_r][taxi_c].tipo = 4;
+                            mappa[taxi_r][taxi_c].carattere = '*';
+                        }
+                    }
+                    mappa[taxi_r][taxi_c].numTaxiPresenti++;
+                    //.....
+                    *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
+                    if(*tempoImpiegato > SO_TIMEOUT){
+                        mappa[taxi_r][taxi_c].numTaxiPresenti--;
+                        if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                            if(mappa[taxi_r][taxi_c].tipo == 3){          //CELLA SOLO DI TAXI
+                                mappa[taxi_r][taxi_c].tipo = 0;
+                                mappa[taxi_r][taxi_c].carattere = '0';
+                            }else if(mappa[taxi_r][taxi_c].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
+                                mappa[taxi_r][taxi_c].tipo = 2;
+                                mappa[taxi_r][taxi_c].carattere = 'S';
+                            }
+                        }
+                        printf("Richiesta non soddisfatta nei tempi previsti\n");
+                        if(releaseSem(semid, 1) == -1){     //Decremento semaforo.
+                            EXIT_ON_ERROR
+                        }
+                        return 0;
+                    }
+                    if(releaseSem(semid, 1) == -1){     //Decremento semaforo.
+                        EXIT_ON_ERROR
+                    }
                 }else if(taxi_c == arrivo_c){
-                    //printf("Ok sono nella stessa colonna.\n");
+                    //Sono nella stessa colonna
                     flagC = 0;
                     
                 }else{  //Ostacolo
-
+                    
                     if(taxi_r + 1 < SO_HEIGHT){
-                        //Qui va aggiunta la nanosleep
+                        if(reserveSem(semid, 2) == -1){     //Decremento semaforo.
+                            EXIT_ON_ERROR
+                        }
                         printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
                         if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                             EXIT_ON_ERROR
@@ -210,11 +250,29 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         //..... 
                         *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                         if(*tempoImpiegato > SO_TIMEOUT){
+                            mappa[taxi_r][taxi_c].numTaxiPresenti--;
+                            if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                                if(mappa[taxi_r][taxi_c].tipo == 3){          //CELLA SOLO DI TAXI
+                                    mappa[taxi_r][taxi_c].tipo = 0;
+                                    mappa[taxi_r][taxi_c].carattere = '0';
+                                }else if(mappa[taxi_r][taxi_c].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
+                                    mappa[taxi_r][taxi_c].tipo = 2;
+                                    mappa[taxi_r][taxi_c].carattere = 'S';
+                                }
+                            }
                             printf("Richiesta non soddisfatta nei tempi previsti\n");
+                            if(releaseSem(semid, 2) == -1){    //Incremento semaforo.
+                                EXIT_ON_ERROR
+                            }
                             return 0;
                         }
+                        if(releaseSem(semid, 2) == -1){    //Incremento semaforo.
+                            EXIT_ON_ERROR
+                        }
                     }else if(taxi_r - 1 >= 0){
-                        //Qui va aggiunta la nanosleep
+                        if(reserveSem(semid, 3) == -1){     //Decremento semaforo.
+                            EXIT_ON_ERROR
+                        }
                         printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
                         if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                             EXIT_ON_ERROR
@@ -250,16 +308,34 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         //.....   
                         *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                         if(*tempoImpiegato > SO_TIMEOUT){
+                            mappa[taxi_r][taxi_c].numTaxiPresenti--;
+                            if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                                if(mappa[taxi_r][taxi_c].tipo == 3){          //CELLA SOLO DI TAXI
+                                    mappa[taxi_r][taxi_c].tipo = 0;
+                                    mappa[taxi_r][taxi_c].carattere = '0';
+                                }else if(mappa[taxi_r][taxi_c].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
+                                    mappa[taxi_r][taxi_c].tipo = 2;
+                                    mappa[taxi_r][taxi_c].carattere = 'S';
+                                }
+                            }
                             printf("Richiesta non soddisfatta nei tempi previsti\n");
+                            if(releaseSem(semid, 3) == -1){    //Incremento semaforo.
+                                EXIT_ON_ERROR
+                            } 
                             return 0;
+                        }
+                        if(releaseSem(semid, 3) == -1){    //Incremento semaforo.
+                            EXIT_ON_ERROR
                         }                
                     }
                 }
 
             }   //Fine while colonne
-        
+            
             if((taxi_r < arrivo_r)  && (mappa[taxi_r + 1][taxi_c].tipo != 1)){
-
+                if(reserveSem(semid, 4) == -1){     //Decremento semaforo.
+                    EXIT_ON_ERROR
+                }
                 //Qui va aggiunta la nanosleep
                 printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
                 if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
@@ -297,11 +373,30 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                 //..... 
                 *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                 if(*tempoImpiegato > SO_TIMEOUT){
+                    mappa[taxi_r][taxi_c].numTaxiPresenti--;
+                    if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                        if(mappa[taxi_r][taxi_c].tipo == 3){          //CELLA SOLO DI TAXI
+                            mappa[taxi_r][taxi_c].tipo = 0;
+                            mappa[taxi_r][taxi_c].carattere = '0';
+                        }else if(mappa[taxi_r][taxi_c].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
+                            mappa[taxi_r][taxi_c].tipo = 2;
+                            mappa[taxi_r][taxi_c].carattere = 'S';
+                        }
+                    }
                     printf("Richiesta non soddisfatta nei tempi previsti\n");
+                    if(releaseSem(semid, 4) == -1){    //Incremento semaforo.
+                        EXIT_ON_ERROR
+                    } 
                     return 0;
                 }
+                if(releaseSem(semid, 4) == -1){    //Incremento semaforo.
+                    EXIT_ON_ERROR
+                } 
+            
             }else if((taxi_r > arrivo_r)  && (mappa[taxi_r - 1][taxi_c].tipo != 1)){
-                
+                if(reserveSem(semid, 5) == -1){     //Decremento semaforo.
+                    EXIT_ON_ERROR
+                }
                 printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
                 if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                     EXIT_ON_ERROR
@@ -337,19 +432,38 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                 //.....
                 *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                 if(*tempoImpiegato > SO_TIMEOUT){
+                    mappa[taxi_r][taxi_c].numTaxiPresenti--;
+                    if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                        if(mappa[taxi_r][taxi_c].tipo == 3){          //CELLA SOLO DI TAXI
+                            mappa[taxi_r][taxi_c].tipo = 0;
+                            mappa[taxi_r][taxi_c].carattere = '0';
+                        }else if(mappa[taxi_r][taxi_c].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
+                            mappa[taxi_r][taxi_c].tipo = 2;
+                            mappa[taxi_r][taxi_c].carattere = 'S';
+                        }
+                    }
                     printf("Richiesta non soddisfatta nei tempi previsti\n");
+                    if(releaseSem(semid, 5) == -1){    //Incremento semaforo.
+                        EXIT_ON_ERROR
+                    } 
                     return 0;
                 }
+                if(releaseSem(semid, 5) == -1){    //Incremento semaforo.
+                    EXIT_ON_ERROR
+                } 
 
             }else if(taxi_r == arrivo_r){
 
-                //printf("Ok sono nella stessa riga.\n");
+                //Sono nella stessa riga
                 flagR = 0;
                 break; //non c'è bisogno?
-
+            
             }else{  //Ostacolo
-                   
+                
                 if(taxi_c + 1 < SO_WIDTH){
+                    if(reserveSem(semid, 6) == -1){     //Decremento semaforo.
+                        EXIT_ON_ERROR
+                    }   
                     printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
                     if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
@@ -385,11 +499,30 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                     //..... 
                     *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                     if(*tempoImpiegato > SO_TIMEOUT){
+                        mappa[taxi_r][taxi_c].numTaxiPresenti--;
+                        if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                        if(mappa[taxi_r][taxi_c].tipo == 3){          //CELLA SOLO DI TAXI
+                            mappa[taxi_r][taxi_c].tipo = 0;
+                            mappa[taxi_r][taxi_c].carattere = '0';
+                        }else if(mappa[taxi_r][taxi_c].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
+                            mappa[taxi_r][taxi_c].tipo = 2;
+                            mappa[taxi_r][taxi_c].carattere = 'S';
+                        }
+                    }
                         printf("Richiesta non soddisfatta nei tempi previsti\n");
+                        if(releaseSem(semid, 6) == -1){    //Incremento semaforo.
+                            EXIT_ON_ERROR
+                        } 
                         return 0;
                     }
-
+                    if(releaseSem(semid, 6) == -1){    //Incremento semaforo.
+                        EXIT_ON_ERROR
+                    } 
+                   
                 }else if(taxi_c - 1 >= 0){
+                    if(reserveSem(semid, 7) == -1){     //Decremento semaforo.
+                        EXIT_ON_ERROR
+                    }
                     printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
                     if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
@@ -424,14 +557,29 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                     mappa[taxi_r][taxi_c].numTaxiPresenti++;
                     *tempoImpiegato += mappa[taxi_r][taxi_c].tempAttravers.tv_nsec; 
                     if(*tempoImpiegato > SO_TIMEOUT){
+                        mappa[taxi_r][taxi_c].numTaxiPresenti--;
+                        if(mappa[taxi_r][taxi_c].numTaxiPresenti == 0){
+                            if(mappa[taxi_r][taxi_c].tipo == 3){          //CELLA SOLO DI TAXI
+                                mappa[taxi_r][taxi_c].tipo = 0;
+                                mappa[taxi_r][taxi_c].carattere = '0';
+                            }else if(mappa[taxi_r][taxi_c].tipo == 4){    //CELLA MISTA DI TAXI E SORGENTI
+                                mappa[taxi_r][taxi_c].tipo = 2;
+                                mappa[taxi_r][taxi_c].carattere = 'S';
+                            }
+                        }
                         printf("Richiesta non soddisfatta nei tempi previsti\n");
+                        if(releaseSem(semid, 7) == -1){    //Incremento semaforo.
+                            EXIT_ON_ERROR
+                        }
                         return 0;
                     }
 
-                    //.....
-                     
+                    if(releaseSem(semid, 7) == -1){    //Incremento semaforo.
+                        EXIT_ON_ERROR
+                    } 
+                    
                 }
-            }
+            }   //Fine else ostacolo
         }   //Fine while righe
 
         if(taxi_r == arrivo_r && taxi_c == arrivo_c){
@@ -470,7 +618,6 @@ void mapGenerator(struct cella map[SO_HEIGHT][SO_WIDTH]){
     //inizializzazione valori dell'header
     SO_HOLES = 0; 
     SO_SOURCES = 0; 
-    SO_TAXI = 0;
     SO_TOP_CELLS = 0; 
 
     //definisco i valori random (ho messo un valore come massimo che si può togliere)
@@ -648,14 +795,12 @@ void SourcesGenerator(struct cella A[SO_HEIGHT][SO_WIDTH]){
 }
 
 
-void TaxiGenerator(struct cella A[SO_HEIGHT][SO_WIDTH]){
+void TaxiGenerator(struct cella A[SO_HEIGHT][SO_WIDTH], struct taxi *infoTaxi){
 
-    int numTaxi, r, c;
-
-    //Genero un numero random di taxi da creare nella mappa.
-    numTaxi = rand() %(SO_HEIGHT*SO_WIDTH-SO_HOLES); //così è proporzionato
-
-    while(numTaxi!=0){
+    int r, c;
+    int flag = 1;
+   
+    while(flag){
         //Genero coordinate randomiche
         r = rand() %SO_HEIGHT;
         c = rand() %SO_WIDTH; 
@@ -671,13 +816,20 @@ void TaxiGenerator(struct cella A[SO_HEIGHT][SO_WIDTH]){
                     A[r][c].tipo = 3; //è una cella vuota e diventa taxi
                 }else if(A[r][c].tipo == 2){    
                     A[r][c].tipo = 4; //è una cella che è contiene sia un taxi che una sorgente
-                }         
-                SO_TAXI++;  
+                }           
+                flag = 0;	
             }
         }
-
-    	numTaxi--;       	
+              	
     }  
+    ptMemCond->SO_TAXI++;
+    infoTaxi->pid = (long)getpid();
+    infoTaxi->percorso = 0;
+    infoTaxi->viaggioPiuLungo = 0;
+    infoTaxi->richiesteRacc = 0;
+    infoTaxi->tempoImpiegato = 0;
+    infoTaxi->coordTaxi[0] = r;
+    infoTaxi->coordTaxi[1] = c;
 
 }
 

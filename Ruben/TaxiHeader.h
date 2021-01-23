@@ -66,7 +66,7 @@ struct cella{
 struct taxi{
     long pid; //il pid del processo taxi
     int percorso; //si incrementa per ogni cella che attraversa
-    int viaggioPiuLungo; //tiene traccia del viaggio più lungo che ha fatto
+    int viaggioPiuLungo; //tiene traccia del viaggio più lungo che ha fatto (tempo)
     int richiesteRacc; //numero delle richieste che ha raccolto
     int coordTaxi[2]; //le coordinate del taxi
     long tempoImpiegato;
@@ -88,13 +88,19 @@ struct queue{
 
 //per la memoria condivisa
 struct data{
-   struct cella mappa[SO_HEIGHT][SO_WIDTH];
-   //da rivedere
-   int numTaxi; //il numero dei taxi (come SO_TAXI)
-   int numSourc; //il numero dei taxi (come SO_SOURCES)
-   long TaxiPid;
-   long SourcePid;
-   int durataSimu;
+    struct cella mappa[SO_HEIGHT][SO_WIDTH];
+    //da rivedere
+    int SO_TAXI; //il numero dei taxi (come SO_TAXI)
+    int numSourc; //il numero dei taxi (come SO_SOURCES)
+    long TaxiPid;
+    long SourcePid;
+    int durataSimu;
+    long TaxiPiuStrada[2]; //TaxiPiuStrada[0] il max di celle attraversate  TaxiPiuStrada[1] il relativo pid del taxi che ha attraversato + celle
+    long tripPiuLungo[2]; //TaxiPiuStrada[0] il tempo del viaggio più lungo  TaxiPiuStrada[1] il relativo pid del taxi 
+    long richPiuRaccolte[2];    //TaxiPiuStrada[0] il numero di richieste più raccolte  TaxiPiuStrada[1] il relativo pid del taxi 
+    int tripSuccess; //richieste completate con successo
+    int tripAborted; //richieste abortite (SO_TIMEOUT taxi, il tempo è scaduto) "tempo di inattività del taxi dopo il quale il taxi muore" (muore xk è scaduto il tempo nella cella?)
+    int tripNotExec; //richieste non intraprese
 };
 
 //Ho bisogno di definire questa struct perchè su linux al contrario di macOS non basta importare la libreria dei semafori.
@@ -117,6 +123,7 @@ union semun arg; //da mettere di default, per la rimozione del semaforo finale
 //                                           PROTOTIPI DI FUNZIONI
 //==============================================================================================================
 
+
 //Funzioni per la generazione:
 void mapGenerator(struct cella map[SO_HEIGHT][SO_WIDTH]);
 
@@ -124,7 +131,7 @@ void HolesGenerator(struct cella A[SO_HEIGHT][SO_WIDTH]);
 
 void SourcesGenerator(struct cella A[SO_HEIGHT][SO_WIDTH]);
 
-void TaxiGenerator(struct cella A[SO_HEIGHT][SO_WIDTH]);
+void TaxiGenerator(struct cella A[SO_HEIGHT][SO_WIDTH], struct taxi *infoTaxi);
 
 
 //funzioni per la ricerca:
