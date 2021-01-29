@@ -1,30 +1,24 @@
 #include "TaxiFunctions.h"
-//PROGRAMMA DI SIMULAZIONE CHE GENERA E INIZIALIZZA LA MAPPA (MESSA IN MEMORIA CONDIVISA), FORKA SO_SOURCES E GESTISCE LE RICHIESTE DI TAXI
-
 
 void handlerSource(int sig){
 
     if((sig == SIGALRM) || (sig == SIGINT) && ptMemCond->durataSimu>0){
-       /* if(reserveSem(semid, 0)==-1)
-            EXIT_ON_ERROR  */
+      
         cercaSource(&infoSource, ptMemCond->mappa); //Cerco una casella con la sorgente
-        /*if(releaseSem(semid,0)==-1) 
-            EXIT_ON_ERROR */
+
         //carico la coda:
         coda.partenza[0] = infoSource.coordSource[0];
         coda.partenza[1] = infoSource.coordSource[1];
         coda.mtype = (long) getpid();
-        //mettere il sem pure qui?
-        /*if(reserveSem(semid, 0)==-1)
-            EXIT_ON_ERROR  */
+
         getCellaArrivo(ptMemCond->mappa, &coda); //metodo che mi dà random delle coordinate di arrivo e me le scrive nella coda di messaggi
-         /* if(releaseSem(semid,0)==-1) 
-            EXIT_ON_ERROR*/
+
         printf("Richiesta! Destinazione: [%d][%d]\n", coda.arrivo[0], coda.arrivo[1]);
         //invio alla coda
         if(msgsnd(codaid, &coda, (sizeof(struct queue)), IPC_NOWAIT)== -1){
             EXIT_ON_ERROR
         }
+        ptMemCond->tripNotExec++;
         printf("Messaggio inviato correttamente.\n");
 
     }else if(sig == SIGTERM){
@@ -68,46 +62,39 @@ int main(){
     }    
     
     //ottengo il semaforo
-    if((semid = semget(SMFKEY, 1, 0666)) == -1){ //ipc_private crea e mette una chiave a caso, 1 è solo per un set di semafori
+    if((semid = semget(SMFKEY, 1, 0666)) == -1){ 
         EXIT_ON_ERROR
     }
-  
-    //for(i = 0; i<3; ++i){ 
-        switch(fork()){
+   
+    switch(fork()){
 
-            case -1:
-                EXIT_ON_ERROR
+        case -1:
 
-            case 0: //è il figlio (RICHIESTA TAXI)   
-                printf("Sono una sorgente! Il mio pid è: ");
-                infoSource.pid = (long)getpid();
-                printf(GREEN "%ld" RESET, infoSource.pid);
-                printf("\n");
-                while(ptMemCond->durataSimu>0){ //sarà infinito, esce quando il master setta il flag nella memoria condivisa
-                    sleep(3);
-                    kill(getpid(), SIGALRM);
-                }     
-                
-                exit(EXIT_SUCCESS); 
-        }
-    //} //fine ciclo for
+            EXIT_ON_ERROR
 
+        case 0: //è il figlio (RICHIESTA TAXI)   
 
-   //for(int i=0; i<3; ++i){
-    wait(NULL); //attendo il figlio
-    //} 
+            printf("Le sorgenti cominciano a mandare richieste...\n");
+            while(ptMemCond->durataSimu>0){ //sarà infinito, esce quando il master setta il flag nella memoria condivisa
+                sleep(3);
+                kill(getpid(), SIGALRM);
+            }     
+            exit(EXIT_SUCCESS); 
+
+        default:
+
+            wait(NULL); //attendo il figlio
+
+    }
 
     printf("SO SOURCE HA FINITO\n");
     sleep(5);
     printf("mando una send per dire che ho finito.\n");
 
-    
-   // for(int i=0; i<3; ++i){ //sta volta sarà SO_TAXI
     coda.mtype = 1;  
     if(msgsnd(codaid, &coda, (sizeof(struct queue)), IPC_NOWAIT)== -1){
         EXIT_ON_ERROR
     }
-   // }
 
 exit(EXIT_SUCCESS);
 

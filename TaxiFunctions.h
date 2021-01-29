@@ -87,10 +87,10 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
             while(taxi_c<SO_WIDTH && flagC){    //Colonne
                 
                 if((taxi_c < arrivo_c) && (mappa[taxi_r][taxi_c + 1].tipo != 1 )){
-                    if(reserveSem(semid, 0) == -1){     //Decremento semaforo.
+                    if(reserveSem(semid, mappa[taxi_r][taxi_c + 1].sem) == -1){     //Decremento semaforo.
                         EXIT_ON_ERROR
                     }  
-                    printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+        
                     if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
                     }
@@ -137,20 +137,20 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                             }
                         }
                         printf("Richiesta non soddisfatta nei tempi previsti\n");
-                        if(releaseSem(semid, 0) == -1){    //Incremento semaforo.
+                        if(releaseSem(semid, mappa[taxi_r][taxi_c + 1].sem) == -1){    //Incremento semaforo.
                             EXIT_ON_ERROR
                         }
                         return 0;
                     }    
                 //SEMAFORO OUT
-                    if(releaseSem(semid, 0) == -1){    //Incremento semaforo.
+                    if(releaseSem(semid, mappa[taxi_r][taxi_c + 1].sem) == -1){    //Incremento semaforo.
                         EXIT_ON_ERROR
                     }
                 }else if((taxi_c > arrivo_c)  && (mappa[taxi_r][taxi_c - 1].tipo != 1)){
-                    if(reserveSem(semid, 1) == -1){     //Decremento semaforo.
+                    if(reserveSem(semid, mappa[taxi_r][taxi_c - 1].sem) == -1){     //Decremento semaforo.
                         EXIT_ON_ERROR
                     }
-                    printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                  
                     if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
                     }
@@ -197,12 +197,12 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                             }
                         }
                         printf("Richiesta non soddisfatta nei tempi previsti\n");
-                        if(releaseSem(semid, 1) == -1){     //Decremento semaforo.
+                        if(releaseSem(semid, mappa[taxi_r][taxi_c - 1].sem) == -1){     //Decremento semaforo.
                             EXIT_ON_ERROR
                         }
                         return 0;
                     }
-                    if(releaseSem(semid, 1) == -1){     //Decremento semaforo.
+                    if(releaseSem(semid, mappa[taxi_r][taxi_c - 1].sem) == -1){     //Decremento semaforo.
                         EXIT_ON_ERROR
                     }
                 }else if(taxi_c == arrivo_c){
@@ -212,10 +212,10 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                 }else{  //Ostacolo
                     
                     if(taxi_r + 1 < SO_HEIGHT){
-                        if(reserveSem(semid, 2) == -1){     //Decremento semaforo.
+                        if(reserveSem(semid, mappa[taxi_r + 1][taxi_c ].sem) == -1){     //Decremento semaforo.
                             EXIT_ON_ERROR
                         }
-                        printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                    
                         if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                             EXIT_ON_ERROR
                         }
@@ -261,19 +261,19 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                                 }
                             }
                             printf("Richiesta non soddisfatta nei tempi previsti\n");
-                            if(releaseSem(semid, 2) == -1){    //Incremento semaforo.
+                            if(releaseSem(semid, mappa[taxi_r + 1][taxi_c ].sem) == -1){    //Incremento semaforo.
                                 EXIT_ON_ERROR
                             }
                             return 0;
                         }
-                        if(releaseSem(semid, 2) == -1){    //Incremento semaforo.
+                        if(releaseSem(semid, mappa[taxi_r + 1][taxi_c ].sem) == -1){    //Incremento semaforo.
                             EXIT_ON_ERROR
                         }
                     }else if(taxi_r - 1 >= 0){
-                        if(reserveSem(semid, 3) == -1){     //Decremento semaforo.
+                        if(reserveSem(semid, mappa[taxi_r - 1][taxi_c ].sem) == -1){     //Decremento semaforo.
                             EXIT_ON_ERROR
                         }
-                        printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                        
                         if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                             EXIT_ON_ERROR
                         }
@@ -319,12 +319,12 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                                 }
                             }
                             printf("Richiesta non soddisfatta nei tempi previsti\n");
-                            if(releaseSem(semid, 3) == -1){    //Incremento semaforo.
+                            if(releaseSem(semid, mappa[taxi_r - 1][taxi_c ].sem) == -1){    //Incremento semaforo.
                                 EXIT_ON_ERROR
                             } 
                             return 0;
                         }
-                        if(releaseSem(semid, 3) == -1){    //Incremento semaforo.
+                        if(releaseSem(semid, mappa[taxi_r - 1][taxi_c ].sem) == -1){    //Incremento semaforo.
                             EXIT_ON_ERROR
                         }                
                     }
@@ -333,11 +333,11 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
             }   //Fine while colonne
             
             if((taxi_r < arrivo_r)  && (mappa[taxi_r + 1][taxi_c].tipo != 1)){
-                if(reserveSem(semid, 4) == -1){     //Decremento semaforo.
+                if(reserveSem(semid, mappa[taxi_r + 1][taxi_c].sem) == -1){     //Decremento semaforo.
                     EXIT_ON_ERROR
                 }
                 //Qui va aggiunta la nanosleep
-                printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                
                 if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                     EXIT_ON_ERROR
                 }
@@ -384,20 +384,20 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         }
                     }
                     printf("Richiesta non soddisfatta nei tempi previsti\n");
-                    if(releaseSem(semid, 4) == -1){    //Incremento semaforo.
+                    if(releaseSem(semid, mappa[taxi_r + 1][taxi_c].sem) == -1){    //Incremento semaforo.
                         EXIT_ON_ERROR
                     } 
                     return 0;
                 }
-                if(releaseSem(semid, 4) == -1){    //Incremento semaforo.
+                if(releaseSem(semid, mappa[taxi_r + 1][taxi_c].sem) == -1){    //Incremento semaforo.
                     EXIT_ON_ERROR
                 } 
             
             }else if((taxi_r > arrivo_r)  && (mappa[taxi_r - 1][taxi_c].tipo != 1)){
-                if(reserveSem(semid, 5) == -1){     //Decremento semaforo.
+                if(reserveSem(semid, mappa[taxi_r - 1][taxi_c].sem) == -1){     //Decremento semaforo.
                     EXIT_ON_ERROR
                 }
-                printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                
                 if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                     EXIT_ON_ERROR
                 }
@@ -443,12 +443,12 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         }
                     }
                     printf("Richiesta non soddisfatta nei tempi previsti\n");
-                    if(releaseSem(semid, 5) == -1){    //Incremento semaforo.
+                    if(releaseSem(semid, mappa[taxi_r - 1][taxi_c].sem) == -1){    //Incremento semaforo.
                         EXIT_ON_ERROR
                     } 
                     return 0;
                 }
-                if(releaseSem(semid, 5) == -1){    //Incremento semaforo.
+                if(releaseSem(semid, mappa[taxi_r - 1][taxi_c].sem) == -1){    //Incremento semaforo.
                     EXIT_ON_ERROR
                 } 
 
@@ -461,10 +461,10 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
             }else{  //Ostacolo
                 
                 if(taxi_c + 1 < SO_WIDTH){
-                    if(reserveSem(semid, 6) == -1){     //Decremento semaforo.
+                    if(reserveSem(semid, mappa[taxi_r][taxi_c + 1].sem) == -1){     //Decremento semaforo.
                         EXIT_ON_ERROR
                     }   
-                    printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                    
                     if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
                     }
@@ -510,20 +510,20 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                         }
                     }
                         printf("Richiesta non soddisfatta nei tempi previsti\n");
-                        if(releaseSem(semid, 6) == -1){    //Incremento semaforo.
+                        if(releaseSem(semid, mappa[taxi_r][taxi_c + 1].sem) == -1){    //Incremento semaforo.
                             EXIT_ON_ERROR
                         } 
                         return 0;
                     }
-                    if(releaseSem(semid, 6) == -1){    //Incremento semaforo.
+                    if(releaseSem(semid, mappa[taxi_r][taxi_c + 1].sem) == -1){    //Incremento semaforo.
                         EXIT_ON_ERROR
                     } 
                    
                 }else if(taxi_c - 1 >= 0){
-                    if(reserveSem(semid, 7) == -1){     //Decremento semaforo.
+                    if(reserveSem(semid, mappa[taxi_r][taxi_c - 1].sem) == -1){     //Decremento semaforo.
                         EXIT_ON_ERROR
                     }
-                    printf("cella[%d][%d].tempoattraversamento = %ld  ",taxi_r, taxi_c, mappa[taxi_r][taxi_c].tempAttravers.tv_nsec);
+                    
                     if(nanosleep(&mappa[taxi_r][taxi_c].tempAttravers, NULL) == -1){
                         EXIT_ON_ERROR
                     }
@@ -568,13 +568,13 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
                             }
                         }
                         printf("Richiesta non soddisfatta nei tempi previsti\n");
-                        if(releaseSem(semid, 7) == -1){    //Incremento semaforo.
+                        if(releaseSem(semid, mappa[taxi_r][taxi_c - 1].sem) == -1){    //Incremento semaforo.
                             EXIT_ON_ERROR
                         }
                         return 0;
                     }
 
-                    if(releaseSem(semid, 7) == -1){    //Incremento semaforo.
+                    if(releaseSem(semid, mappa[taxi_r][taxi_c - 1].sem) == -1){    //Incremento semaforo.
                         EXIT_ON_ERROR
                     } 
                     
@@ -615,6 +615,7 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
 void mapGenerator(struct cella map[SO_HEIGHT][SO_WIDTH]){
 
     int i,j;
+    int k = 1; 
     //inizializzazione valori dell'header
     SO_HOLES = 0; 
     SO_SOURCES = 0; 
@@ -627,8 +628,10 @@ void mapGenerator(struct cella map[SO_HEIGHT][SO_WIDTH]){
     SO_CAP_MIN = rand() %(SO_CAP_MAX+1); //ovviamente deve essere inferiore o uguale al max, metto il +1 includere la possibilità di averlo uguale
     SO_TIMENSEC_MAX = rand() % 1000; 
     SO_TIMENSEC_MIN = rand() %(SO_TIMENSEC_MAX+1);
-    
-    
+    //Creo ed inizializzo un numero di semafori pari al numero di celle. 
+    if((semid = semget(SMFKEY, (SO_HEIGHT*SO_WIDTH + 1), IPC_CREAT | 0666)) == -1){ //ipc_private crea e mette una chiave a caso, 1 è solo per un set di semafori
+        EXIT_ON_ERROR
+    }
     //creazione mappa inizializzata a 0:
     for(i=0; i<SO_HEIGHT; i++){
         for(j=0; j<SO_WIDTH; j++){
@@ -642,6 +645,11 @@ void mapGenerator(struct cella map[SO_HEIGHT][SO_WIDTH]){
             map[i][j].tempAttravers.tv_sec = 1; 
             map[i][j].tempAttravers.tv_nsec = (rand() % (SO_TIMENSEC_MAX - SO_TIMENSEC_MIN +1)) + SO_TIMENSEC_MIN; //numero random tra l'intervallo
             map[i][j].capMax = (rand() % (SO_CAP_MAX - SO_CAP_MIN +1)) + SO_CAP_MIN;    //Numero massimo di taxi che la cella può contenere
+            map[i][j].sem = k;
+            if(initSemAvailable(semid, k, map[i][j].capMax) == -1){
+                EXIT_ON_ERROR
+            }
+            k++;
         }
     }
 }
@@ -857,9 +865,9 @@ void getCellaArrivo(struct cella A[SO_HEIGHT][SO_WIDTH], struct queue *coda){ //
 //====================================================================
 
 // Initialize semaphore to 1 (i.e., "available")
-int initSemAvailable(int semId, int semNum) {
+int initSemAvailable(int semId, int semNum, int val) {
 	union semun arg;
-	arg.val = 1;
+	arg.val = val;
 
 	return semctl(semId, semNum, SETVAL, arg);
 }

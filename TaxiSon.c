@@ -1,19 +1,27 @@
 #include "TaxiFunctions.h"
 
+int valid;                       //Flag che controlla se la richiesta è stata soddisfatta o meno (1 = soddisfatta | 0 = insoddisfatta)
+
 void handlerTaxi(int sig){
     if(sig == SIGTERM){
         printf("Simulazione terminata!\n");
+        if(valid != 1){
+            ptMemCond->tripAborted++;
+        }
         calcolaMax(ptMemCond, &infoTaxi);
         exit(EXIT_SUCCESS);
     }
 }
 
 
-int main(int argc, int argv[]){
+int main(){
 
-    int valid;                       //Flag che controlla se la richiesta è stata soddisfatta o meno (1 = soddisfatta | 0 = insoddisfatta)
+    
     SO_TIMEOUT = rand() % 10000;
-
+    //gestione per il sigterm
+    if(signal(SIGTERM, handlerTaxi) == SIG_ERR){
+        EXIT_ON_ERROR
+    }   
     //prelevo l'ID della memoria condivisa
     if((dataid = shmget(SHMKEY, sizeof(struct data), 0666))==-1){ //creazione shm
         EXIT_ON_ERROR
@@ -24,16 +32,14 @@ int main(int argc, int argv[]){
         EXIT_ON_ERROR
     }
 
-    //prelevo id semaforo
-    if((semid = semget(SMFKEY, 1, 0666)) == -1){ 
-        EXIT_ON_ERROR
-    }
-
     //mi aggancio alla coda (0 xk non mi interessano i flag)
     if((codaid = msgget(MSGKEY, 0 ))==-1){ 
         EXIT_ON_ERROR     
     }
-    
+    //prelevo id semaforo
+    if((semid = semget(SMFKEY, 1, 0666)) == -1){ 
+        EXIT_ON_ERROR
+    }
 
     printf("Sono il taxi! Il mio pid è: ");
     printf(BOLDRED "%ld\n" RESET, (long)getpid());
@@ -41,13 +47,13 @@ int main(int argc, int argv[]){
 
     //Andando a modificare la memoria condivisa con il taxi generator, lo mettiamo all'interno di una sezione critica? 
     //================SEZIONE CRITICA=========================
-    if(reserveSem(semid, 8) == -1){     //Decremento semaforo.
+    if(reserveSem(semid, 0) == -1){     //Decremento semaforo.
         EXIT_ON_ERROR
     }  
 
     TaxiGenerator(ptMemCond->mappa, &infoTaxi);
 
-    if(releaseSem(semid, 8) == -1){     //Decremento semaforo.
+    if(releaseSem(semid, 0) == -1){     //Decremento semaforo.
         EXIT_ON_ERROR
     } 
     //======================================================== 
@@ -64,11 +70,12 @@ int main(int argc, int argv[]){
     }
         
     printf("Sono %ld, messaggio ricevuto! \n", (long)getpid());
-        //verifico che non sia una richiesta di terminazione
+    //verifico che non sia una richiesta di terminazione
     if(coda.mtype==1){ 
         printf("%d ha ricevuto una richiesta di terminazione!\n", getpid());
         exit(EXIT_SUCCESS);
     }
+    ptMemCond->tripNotExec--;
  
         
     printf("Partenza taxi [%d][%d]\n", infoTaxi.coordTaxi[0], infoTaxi.coordTaxi[1]);
@@ -85,8 +92,9 @@ int main(int argc, int argv[]){
             
         printf("Il taxi [%ld] non è sulla sorgente e la raggiunge.\n", (long)getpid()); 
 
-        if(valid = TaxiMover(ptMemCond->mappa, &infoTaxi, coda.partenza[0], coda.partenza[1], &infoTaxi.tempoImpiegato) == 1){                            
+        if((valid = TaxiMover(ptMemCond->mappa, &infoTaxi, coda.partenza[0], coda.partenza[1], &infoTaxi.tempoImpiegato)) == 1){                            
             printf("Ora il taxi [%ld] è sulla sorgente.\n", (long)getpid()); 
+            valid = 0;
         }else{  //RICHIESTA FALLITA
             ptMemCond->SO_TAXI--;
             calcolaMax(ptMemCond, &infoTaxi);
@@ -96,7 +104,7 @@ int main(int argc, int argv[]){
                 case -1:
                     EXIT_ON_ERROR
                 case 0:
-                    execv("TaxiSon", NULL);
+                    execv("TaxiSon", argv);
                 default:
                     wait(NULL);
                     exit(EXIT_SUCCESS);
@@ -117,7 +125,7 @@ int main(int argc, int argv[]){
             case -1:
                 EXIT_ON_ERROR
             case 0:
-                execv("TaxiSon", NULL);
+                execv("TaxiSon", argv);
             default:
                 wait(NULL);
                 exit(EXIT_SUCCESS);

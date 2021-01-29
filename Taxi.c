@@ -10,8 +10,7 @@ void handlerTaxi(int sig){
     }
 }
 
-int main(int argc, char *argv[]){
-   
+int main(){
    
     //da sistemare
     
@@ -42,6 +41,12 @@ int main(int argc, char *argv[]){
         EXIT_ON_ERROR
     }   
 
+    //Semaforo per il taxi generator 
+    if(initSemAvailable(semid, 0, 1) == -1){
+        EXIT_ON_ERROR
+    }
+
+
     ptMemCond->tripSuccess = 0; 
     ptMemCond->tripAborted = 0; 
     ptMemCond->tripNotExec = 0; 
@@ -53,7 +58,7 @@ int main(int argc, char *argv[]){
     ptMemCond->tripPiuLungo[1] = 0;
     ptMemCond->richPiuRaccolte[1] = 0;
     
-    for(i=0;i<3;i++){
+    for(i=0;i<5;i++){
     
         switch(fork()){ //solo 1 volta xk 1 taxi, SE NO SO_TAXI VOLTE
 

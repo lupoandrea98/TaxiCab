@@ -2,38 +2,6 @@
 #include "TaxiFunctions.h"
 
 
-void SemaphoreInizialization(int semid){
-
-    if(initSemAvailable(semid, 0) < 0){
-        EXIT_ON_ERROR
-    }
-    if(initSemAvailable(semid, 1) < 0){
-        EXIT_ON_ERROR
-    }
-    if(initSemAvailable(semid, 2) < 0){
-        EXIT_ON_ERROR
-    }
-    if(initSemAvailable(semid, 3) < 0){
-        EXIT_ON_ERROR
-    }
-    if(initSemAvailable(semid, 4) < 0){
-        EXIT_ON_ERROR
-    }
-    if(initSemAvailable(semid, 5) < 0){
-        EXIT_ON_ERROR
-    }
-    if(initSemAvailable(semid, 6) < 0){
-        EXIT_ON_ERROR
-    }
-    if(initSemAvailable(semid, 7) < 0){
-        EXIT_ON_ERROR
-    }
-    if(initSemAvailable(semid, 8) < 0){
-        EXIT_ON_ERROR
-    }
-
-}
-
 void deallocation(int codaid, int dataid, int semid){
     //dealloca semaforo
     if(semctl(semid, 0, IPC_RMID, arg)==-1){
@@ -89,13 +57,6 @@ int main(){
         EXIT_ON_ERROR
     }   
 
-    //creo il semaforo
-    if((semid = semget(SMFKEY, 9, IPC_CREAT | 0666)) == -1){ //ipc_private crea e mette una chiave a caso, 1 è solo per un set di semafori
-        EXIT_ON_ERROR
-    }
-    
-    SemaphoreInizialization(semid);
-
     mapGenerator(ptMemCond->mappa);
 
     HolesGenerator(ptMemCond->mappa);
@@ -106,7 +67,7 @@ int main(){
 
     printMap(ptMemCond->mappa);
 
-    SO_DURATION = 30;
+    SO_DURATION = 15;
 
     ptMemCond->durataSimu = SO_DURATION;
     ptMemCond->SO_TAXI = 0;
@@ -155,7 +116,7 @@ int main(){
     printf("Il Taxi che ha percorso più strada è: %ld, ed ha percorso %ld celle\n",  ptMemCond->TaxiPiuStrada[1], ptMemCond->TaxiPiuStrada[0]);
     printf("Il Taxi che ha impiegato più tempo per portare a termine la richiesta è: %ld, ed ci ha impiegato %ld nsec\n", ptMemCond->tripPiuLungo[1], ptMemCond->tripPiuLungo[0]);
     printf("Il Taxi che ha raccolto più richieste è: %ld e ne ha raccolte %ld\n", ptMemCond->richPiuRaccolte[1], ptMemCond->richPiuRaccolte[0]);
-    printf("Numero viaggi tot: %d\n", (ptMemCond->tripSuccess + ptMemCond->tripAborted + ptMemCond->tripNotExec));
+    printf("Numero viaggi tot: %d\n", (ptMemCond->tripSuccess + ptMemCond->tripAborted));
     printf("Numero viaggi abortiti: %d\n", ptMemCond->tripAborted);
     printf("Numero viaggi eseguiti: %d\n", ptMemCond->tripSuccess);
     printf("Numero viaggi non eseguiti: %d\n", ptMemCond->tripNotExec);

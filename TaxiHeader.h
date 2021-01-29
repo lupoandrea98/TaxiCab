@@ -48,7 +48,7 @@ int SO_CAP_MIN; //ci servirà per determinare la capMax
 int SO_CAP_MAX; //ci servirà per determinare la capMax
 unsigned long SO_TIMENSEC_MIN; //ci servirà per determinare tempAttravers (nanosec) per ogni cella
 unsigned long SO_TIMENSEC_MAX; //ci servirà per determinare tempAttravers (nanosec) per ogni cella
-
+char *argv[] = {NULL};      //Serve a rimuovere il warning della execv
 
 struct cella{
     int tipo; //0 libera   1 buco   2 sorgente  3taxi   4 taxi+sorgente
@@ -61,6 +61,7 @@ struct cella{
     //tempoAttravers.tv_nsec ---> nanosecondi
     //questa struct serve ad usare correttamente la nano sleep.
     int capMax; //Capacità massima della cella
+    int sem;
 };
 
 struct taxi{
@@ -82,8 +83,7 @@ struct queue{
     long mtype;  //tipo del messaggio
     char msg[MSIZE]; //contenuto del messaggio
     int arrivo[2]; //le coordinate di dove si vuole arrivare
-    int partenza[2]; //coordinate di partenza
-       
+    int partenza[2]; //coordinate di partenza   
 };
 
 //per la memoria condivisa
@@ -105,10 +105,10 @@ struct data{
 
 //Ho bisogno di definire questa struct perchè su linux al contrario di macOS non basta importare la libreria dei semafori.
 union semun {
-        int              val;    // Value for SETVAL 
-        struct semid_ds *buf;    // Buffer for IPC_STAT, IPC_SET 
-        unsigned short  *array;  // Array for GETALL, SETALL 
-        struct seminfo  *__buf;  // Buffer for IPC_INFO (Linux-specific) 
+    int              val;    // Value for SETVAL 
+    struct semid_ds *buf;    // Buffer for IPC_STAT, IPC_SET 
+    unsigned short  *array;  // Array for GETALL, SETALL 
+    struct seminfo  *__buf;  // Buffer for IPC_INFO (Linux-specific) 
 };
 
 
@@ -153,7 +153,7 @@ void printMap(struct cella map[SO_HEIGHT][SO_WIDTH]); //per la stampa della mapp
 
 
 //per i semafori:
-int initSemAvailable(int semId, int semNum);
+int initSemAvailable(int semId, int semNum, int val);   //aggiunto int val
 int initSemInUse(int semId, int semNum);
 int reserveSem(int semId, int semNum);
 int releaseSem(int semId, int semNum);
