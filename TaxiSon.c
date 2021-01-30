@@ -76,11 +76,19 @@ int main(){
     while(infoTaxi.tempoImpiegato<SO_TIMEOUT){
 
         printf("%ld in attesa di richieste...\n", (long)getpid());
+        //===============SEZIONE CRITICA==================
+        if(reserveSem(semid_taxi, 1) == -1){     //Decremento semaforo.
+            EXIT_ON_ERROR
+        }  
         //ricevo la richiesta
         if(msgrcv(codaid, &coda, sizeof(struct queue), 0,0)==-1){                      
             EXIT_ON_ERROR 
         }    
         printf("Sono %ld, messaggio ricevuto! \n", (long)getpid());
+        if(releaseSem(semid_taxi, 1) == -1){     //Incremento semaforo.
+            EXIT_ON_ERROR
+        } 
+        //=================================================
         //verifico che non sia una richiesta di terminazione
         if(coda.mtype==1){ 
             printf("%d ha ricevuto una richiesta di terminazione!\n", getpid());

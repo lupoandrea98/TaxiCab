@@ -50,11 +50,14 @@ int main(){
     }   
 
     //Creo un altro set di semafori per i taxi
-    if((semid_taxi = semget(SMFKEY_1, 1, IPC_CREAT | 0666)) == -1){ 
+    if((semid_taxi = semget(SMFKEY_1, 2, IPC_CREAT | 0666)) == -1){ 
         EXIT_ON_ERROR
     }
     //Inizializzo il semaforo dei taxi
     if(initSemAvailable(semid_taxi, 0, 1) == -1){
+        EXIT_ON_ERROR
+    }
+    if(initSemAvailable(semid_taxi, 1, 1) == -1){
         EXIT_ON_ERROR
     }
 
