@@ -29,6 +29,7 @@
 #define MSGKEY 151297 //per la coda di messaggi
 #define SHMKEY 130198 //per la memoria condivisa 
 #define SMFKEY 281305 //per il semaforo
+#define SMFKEY_1 150105
 
 
 #define MSIZE 256
@@ -113,6 +114,7 @@ union semun {
 
 
 int codaid, dataid, semid;
+static int semid_taxi;
 struct queue coda;
 struct data* ptMemCond;
 struct source infoSource;
@@ -135,26 +137,25 @@ void TaxiGenerator(struct cella A[SO_HEIGHT][SO_WIDTH], struct taxi *infoTaxi);
 
 
 //funzioni per la ricerca:
-void cercaTaxi(struct taxi *st, struct cella A[SO_HEIGHT][SO_WIDTH]);
-
 void cercaSource(struct source *st, struct cella A[SO_HEIGHT][SO_WIDTH]);
 
 int controlloBuchi(struct cella A[SO_HEIGHT][SO_WIDTH], int i, int j);
 
 void getCellaArrivo(struct cella A[SO_HEIGHT][SO_WIDTH], struct queue *coda);
 
+void calcolaMax(struct data* pt , struct taxi *taxi);
+
 
 //varie:
 int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arrivo_r, int arrivo_c, long *tempoImpiegato); //algoritmo movimento del taxi
 
-void rispondi(const struct queue* richiesta, int msgid, int valid); //per la risposta nella coda dei messaggi
-
 void printMap(struct cella map[SO_HEIGHT][SO_WIDTH]); //per la stampa della mappa
+
+void reset();
 
 
 //per i semafori:
-int initSemAvailable(int semId, int semNum, int val);   //aggiunto int val
+int initSemAvailable(int semId, int semNum, int val);   //abbiamo aggiunto parametro val 
 int initSemInUse(int semId, int semNum);
 int reserveSem(int semId, int semNum);
 int releaseSem(int semId, int semNum);
-

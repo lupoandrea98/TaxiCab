@@ -4,16 +4,24 @@
 
 void handlerTaxi(int sig){
     if(sig == SIGTERM){
-        printf("Simulazione terminata!\n");
+
+        //==========SEZIONE CRITICA==============
+        if(reserveSem(semid_taxi, 0) == -1){     //Decremento semaforo.
+            EXIT_ON_ERROR
+        }  
         calcolaMax(ptMemCond, &infoTaxi);
+        if(releaseSem(semid_taxi, 0) == -1){     //Incremento semaforo.
+            EXIT_ON_ERROR
+        }  
+        //======================================
+        
+        printf("Simulazione terminata!\n");
         exit(EXIT_SUCCESS);
     }
 }
 
 int main(){
    
-    //da sistemare
-    
     int i;
 
     //prelevo l'ID della memoria condivisa
@@ -41,11 +49,14 @@ int main(){
         EXIT_ON_ERROR
     }   
 
-    //Semaforo per il taxi generator 
-    if(initSemAvailable(semid, 0, 1) == -1){
+    //Creo un altro set di semafori per i taxi
+    if((semid_taxi = semget(SMFKEY_1, 1, IPC_CREAT | 0666)) == -1){ 
         EXIT_ON_ERROR
     }
-
+    //Inizializzo il semaforo dei taxi
+    if(initSemAvailable(semid_taxi, 0, 1) == -1){
+        EXIT_ON_ERROR
+    }
 
     ptMemCond->tripSuccess = 0; 
     ptMemCond->tripAborted = 0; 
@@ -58,7 +69,7 @@ int main(){
     ptMemCond->tripPiuLungo[1] = 0;
     ptMemCond->richPiuRaccolte[1] = 0;
     
-    for(i=0;i<5;i++){
+    for(i=0;i<10;i++){
     
         switch(fork()){ //solo 1 volta xk 1 taxi, SE NO SO_TAXI VOLTE
 
@@ -75,10 +86,14 @@ int main(){
             } //fine switch taxi
     }//fine for
 
-    for(int i=0; i<5; ++i){
+    for(i=0; i<10; ++i){
         printf("Attendo la terminazione del taxi %d...\n", wait(NULL)); //attendo il figlio
     } 
 
 printf("tutto finito!\n");
+//dealloca semaforo
+// if(semctl(semid_taxi, 0, IPC_RMID, arg)==-1){
+//     EXIT_ON_ERROR
+// }
 exit(EXIT_SUCCESS);
 }

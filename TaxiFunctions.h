@@ -1,28 +1,27 @@
 #include "TaxiHeader.h"
 
-//==============================================================================================================
-//                                           FUNZIONI TAXI
-//==============================================================================================================
-void reset(){               //Alternativa alla macro RESET presente nell'header
+//Alternativa alla macro RESET presente nell'header (per i colori)
+void reset(){               
     printf("\033[0m");
 }
+
 void calcolaMax(struct data* pt , struct taxi *taxi){
-  
-  if(pt->TaxiPiuStrada[0]<taxi->percorso){
-      pt->TaxiPiuStrada[0] = taxi->percorso;
-      pt->TaxiPiuStrada[1] = taxi->pid;
-  }
+    
+    if(pt->TaxiPiuStrada[0]<taxi->percorso){
+        pt->TaxiPiuStrada[0] = taxi->percorso;
+        pt->TaxiPiuStrada[1] = taxi->pid;
+    }
 
-  if(pt->tripPiuLungo[0]<taxi->tempoImpiegato){
-      pt->tripPiuLungo[0] = taxi->tempoImpiegato;
-      pt->tripPiuLungo[1] = taxi->pid;
-  }
+    if(pt->tripPiuLungo[0]<taxi->tempoImpiegato){
+        pt->tripPiuLungo[0] = taxi->tempoImpiegato;
+        pt->tripPiuLungo[1] = taxi->pid;
+    }
 
-  if(pt->richPiuRaccolte[0]<taxi->richiesteRacc){
-      pt->richPiuRaccolte[0] = taxi->richiesteRacc;
-      pt->richPiuRaccolte[1] = taxi->pid;
-  }
-       
+    if(pt->richPiuRaccolte[0]<taxi->richiesteRacc){
+        pt->richPiuRaccolte[0] = taxi->richiesteRacc;
+        pt->richPiuRaccolte[1] = taxi->pid;
+    }
+ 
 }
 
 void cercaSource(struct source *st, struct cella A[SO_HEIGHT][SO_WIDTH]){ 
@@ -42,33 +41,7 @@ void cercaSource(struct source *st, struct cella A[SO_HEIGHT][SO_WIDTH]){
     }
 }
 
-//NON C'è BISOGNO DI DARE LA RISPOSTA (OPPURE Sì MA SCRIVIAMO SOLO PRINTF "COMPLETATA", "INEVASA", "ABORTITA" GIUSTO PER CAPIRE NOI),
-//INCREMENTIAMO I RISULTATI QUI PERCHè SARà QUESTO IL PROCESSO MASTER CHE CONSERVA I DATI, QUINDI IL PROCESSO TAXI PRIMA DI FARE L'EXIT 
-void rispondi(const struct queue* richiesta, int msgid, int valid) {
-
-    struct queue risposta; //nuova struttura coda simmetrica
-    if(valid == 1){
-        sprintf(risposta.msg, "Sono il taxi [pid: %ld], richiesta servita :) ", (long)getpid());
-    }else{
-        sprintf(risposta.msg, "Sono il Taxi[pid: %ld], richiesta non servita :( ", (long)getpid()); 
-    }
-
-    risposta.mtype = (*richiesta).mtype; //e come tipo metto il pid del figlio che ha fatto la domanda
-    //invio:
-    if(msgsnd(msgid, &risposta, (sizeof(struct queue)-sizeof(long)-sizeof(int[2])), IPC_NOWAIT)== -1){ 
-        EXIT_ON_ERROR
-    }
-
-        // attendo qualche secondo
-        sleep(2);
-       
-}
-
-//DA MODIFICARE, IMPLEMENTARLO CON IL TEMPO E CON IL NUMERO DI SUCCESSI/ABORTITI/ECC...
 int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arrivo_r, int arrivo_c, long *tempoImpiegato){
-
-    if(*tempoImpiegato > SO_TIMEOUT)
-        return 0;    
 
     int flagR = 1;
     int flagC = 1;
@@ -76,6 +49,9 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
     int taxi_r = st->coordTaxi[0];
     int taxi_c = st->coordTaxi[1];
     int valid = 1;      //Flag che controlla il tempo impiegato dal taxi per esaudire la richiesta (Deve essere minore di SO_TIMEOUT)
+
+    if(*tempoImpiegato > SO_TIMEOUT)
+        return 0;    
 
     printf("Partenza [%d][%d]\n", taxi_r, taxi_c);
     printf("Arrivo [%d][%d]\n", arrivo_r, arrivo_c); 
@@ -606,12 +582,6 @@ int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arri
     return 0;
 } //ritorna 1 in caso di successo (arrivo a destinazione) 0 in caso di fallimento
 
-
-
-//==============================================================================================================
-//                                          FUNZIONI SIMULATOR
-//==============================================================================================================
-
 void mapGenerator(struct cella map[SO_HEIGHT][SO_WIDTH]){
 
     int i,j;
@@ -629,9 +599,7 @@ void mapGenerator(struct cella map[SO_HEIGHT][SO_WIDTH]){
     SO_TIMENSEC_MAX = rand() % 1000; 
     SO_TIMENSEC_MIN = rand() %(SO_TIMENSEC_MAX+1);
     //Creo ed inizializzo un numero di semafori pari al numero di celle. 
-    if((semid = semget(SMFKEY, (SO_HEIGHT*SO_WIDTH + 1), IPC_CREAT | 0666)) == -1){ //ipc_private crea e mette una chiave a caso, 1 è solo per un set di semafori
-        EXIT_ON_ERROR
-    }
+    
     //creazione mappa inizializzata a 0:
     for(i=0; i<SO_HEIGHT; i++){
         for(j=0; j<SO_WIDTH; j++){
@@ -655,8 +623,7 @@ void mapGenerator(struct cella map[SO_HEIGHT][SO_WIDTH]){
 }
 
 void printMap(struct cella map[SO_HEIGHT][SO_WIDTH]){
-    puts("\n");
-
+   
     int i,j; //riga e colonna
     for(i=0; i<SO_HEIGHT; i++){
         for(j=0; j<SO_WIDTH; j++){
@@ -749,7 +716,6 @@ int controlloBuchi(struct cella A[SO_HEIGHT][SO_WIDTH], int i, int j){
     return 0;          
 }
 
-
 void HolesGenerator(struct cella A[SO_HEIGHT][SO_WIDTH]){
 
     int numHoles, r, c;
@@ -801,7 +767,6 @@ void SourcesGenerator(struct cella A[SO_HEIGHT][SO_WIDTH]){
     	numSources--;   	
     } 
 }
-
 
 void TaxiGenerator(struct cella A[SO_HEIGHT][SO_WIDTH], struct taxi *infoTaxi){
 

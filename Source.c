@@ -10,9 +10,15 @@ void handlerSource(int sig){
         coda.partenza[0] = infoSource.coordSource[0];
         coda.partenza[1] = infoSource.coordSource[1];
         coda.mtype = (long) getpid();
-
+        //==============SEZIONE CRITICA=====================
+        if(reserveSem(semid, 0) == -1){     //Decremento semaforo.
+            EXIT_ON_ERROR
+        } 
         getCellaArrivo(ptMemCond->mappa, &coda); //metodo che mi dà random delle coordinate di arrivo e me le scrive nella coda di messaggi
-
+        if(releaseSem(semid, 0) == -1){     //Decremento semaforo.
+            EXIT_ON_ERROR
+        } 
+        //==================================================
         printf("Richiesta! Destinazione: [%d][%d]\n", coda.arrivo[0], coda.arrivo[1]);
         //invio alla coda
         if(msgsnd(codaid, &coda, (sizeof(struct queue)), IPC_NOWAIT)== -1){
