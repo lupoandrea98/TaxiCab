@@ -1,5 +1,5 @@
 #MAKEFILE
-CFLAGS = -std=c89 -pedantic     # flag per la normale compilazione
+#CFLAGS = -std=c89 -pedantic     # flag per la normale compilazione
 
 # flag per debugging, alcune parti del codice potrebbero richiedere la
 # macro DEBUG
