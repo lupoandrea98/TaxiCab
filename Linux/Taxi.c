@@ -61,7 +61,7 @@ int main(int argc, char *argv[]){
     ptMemCond->TaxiPiuStrada[1] = 0; 
     ptMemCond->tripPiuLungo[1] = 0;
     ptMemCond->richPiuRaccolte[1] = 0;
-    numTaxi = rand()%40;
+    numTaxi = 10;
     printf("I taxi sono %d\n", numTaxi);
     for(i=0;i<numTaxi;i++){
     

@@ -35,8 +35,8 @@
 #define MSIZE 256
 
 //da ricompilare a tempo di esecuzione!------------------------------------
-#define SO_HEIGHT 10 //RIGHE
-#define SO_WIDTH 10 //COLONNE
+#define SO_HEIGHT 5 //RIGHE
+#define SO_WIDTH 5 //COLONNE
 //-------------------------------------------------------------------------
 
 int SO_HOLES; //numero celle inaccessibili (<= W x H)
