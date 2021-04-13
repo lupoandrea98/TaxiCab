@@ -1,10 +1,5 @@
 #include "TaxiHeader.h"
 
-//Alternativa alla macro RESET presente nell'header (per i colori)
-void reset(){               
-    printf("\033[0m");
-}
-
 void calcolaMax(struct data* pt , struct taxi *taxi){
     
     if(pt->TaxiPiuStrada[0]<taxi->percorso){
@@ -833,14 +828,6 @@ void getCellaArrivo(struct cella A[SO_HEIGHT][SO_WIDTH], struct queue *coda){ //
 int initSemAvailable(int semId, int semNum, int val) {
 	union semun arg;
 	arg.val = val;
-
-	return semctl(semId, semNum, SETVAL, arg);
-}
-
-// Initialize semaphore to 0 (i.e., "in use")
-int initSemInUse(int semId, int semNum) {
-	union semun arg;
-	arg.val = 0;
 
 	return semctl(semId, semNum, SETVAL, arg);
 }

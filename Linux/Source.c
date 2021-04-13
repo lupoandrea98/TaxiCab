@@ -40,7 +40,6 @@ int main(){
     int i;
     int durata; 
     //tutte le altre definizioni (visto che sono pure in comune tra i 3 programmi), sono nell'header!
-    //(sizeof(struct cella)*SO_HEIGHT*SO_WIDTH + sizeof(int)*3+ sizeof(long)*2)
     //Ottengo la memoria condivisa
     if((dataid = shmget(SHMKEY, sizeof(struct data) , 0666))==-1){ //creazione shm
         EXIT_ON_ERROR
@@ -82,7 +81,8 @@ int main(){
         case 0: //è il figlio (RICHIESTA TAXI)   
 
             printf("Le sorgenti cominciano a mandare richieste...\n");
-            while(ptMemCond->durataSimu>0){ //sarà infinito, esce quando il master setta il flag nella memoria condivisa
+            
+            while(1){ //While infinito 
                 sleep(3);
                 kill(getpid(), SIGALRM);
             }     
@@ -95,14 +95,7 @@ int main(){
     }
 
     printf("SO SOURCE HA FINITO\n");
-    sleep(5);
-    printf("mando una send per dire che ho finito.\n");
-
-    coda.mtype = 1;  
-    if(msgsnd(codaid, &coda, (sizeof(struct queue)), IPC_NOWAIT)== -1){
-        EXIT_ON_ERROR
-    }
-
+    
 exit(EXIT_SUCCESS);
 
 }

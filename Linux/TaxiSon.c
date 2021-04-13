@@ -4,13 +4,14 @@ int valid;                       //Flag che controlla se la richiesta è stata s
 
 void handlerTaxi2(int sig){
     if(sig == SIGTERM){
-        if(valid != 1){
-            ptMemCond->tripAborted++;
-        }
+       
         //==========SEZIONE CRITICA==============
         if(reserveSem(semid_taxi, 0) == -1){     //Decremento semaforo.
             EXIT_ON_ERROR
         }  
+        if(valid != 1){
+            ptMemCond->tripAborted++;
+        }
         calcolaMax(ptMemCond, &infoTaxi);
         if(releaseSem(semid_taxi, 0) == -1){     //Incremento semaforo.
             EXIT_ON_ERROR
@@ -20,9 +21,35 @@ void handlerTaxi2(int sig){
         exit(EXIT_SUCCESS);
     }
 }
+void richiestaAbortita(char *argv[]){
 
+    ptMemCond->SO_TAXI--;
 
-int main(){
+    if(reserveSem(semid_taxi, 0) == -1){     
+        EXIT_ON_ERROR
+    }  
+    /*==========SEZIONE CRITICA==============*/
+    calcolaMax(ptMemCond, &infoTaxi);
+    /*==========FINE SEZIONE CRITICA=========*/
+    if(releaseSem(semid_taxi, 0) == -1){    
+        EXIT_ON_ERROR
+    }  
+
+    ptMemCond->tripAborted++;
+
+    /*visto che il taxi non ce l'ha fatta, termina e ne crea subito un altro*/
+    switch(fork()){
+        case -1:
+            EXIT_ON_ERROR
+        case 0:
+            execv("TaxiSon", argv);
+        default:
+            wait(NULL);
+            exit(EXIT_SUCCESS);
+    }
+}
+
+int main(int argc, char *argv[]){
 
     
     SO_TIMEOUT = rand() % 10000;
@@ -31,16 +58,14 @@ int main(){
         EXIT_ON_ERROR
     }   
     //prelevo l'ID della memoria condivisa
-    if((dataid = shmget(SHMKEY, sizeof(struct data), 0666))==-1){ //creazione shm
+    if((dataid = shmget(SHMKEY, sizeof(struct data), 0666))==-1){ 
         EXIT_ON_ERROR
     }
-  
     //mi attacco al segmento di memoria condivisa
     if((ptMemCond = (struct data*)shmat(dataid, NULL, 0))==(void*)-1){ 
         EXIT_ON_ERROR
     }
-
-    //mi aggancio alla coda (0 xk non mi interessano i flag)
+    //mi aggancio alla coda 
     if((codaid = msgget(MSGKEY, 0 ))==-1){ 
         EXIT_ON_ERROR     
     }
@@ -54,8 +79,7 @@ int main(){
     }
 
     printf("Sono il taxi! Il mio pid è: ");
-    printf(BOLDRED "%ld\n" RESET, (long)getpid());
-    //reset();
+    printf(BOLDRED "%ld" RESET, (long)getpid());
 
     //Andando a modificare la memoria condivisa con il taxi generator, lo mettiamo all'interno di una sezione critica
     //================SEZIONE CRITICA=========================
@@ -69,7 +93,7 @@ int main(){
         EXIT_ON_ERROR
     } 
     //======================================================== 
-    printf("Le mie cordinate: {%d}{%d}\n", infoTaxi.coordTaxi[0],infoTaxi.coordTaxi[1]);
+    printf(". Le mie cordinate: {%d}{%d}\n", infoTaxi.coordTaxi[0],infoTaxi.coordTaxi[1]);
 
     
     //WHILE CON CONDIZIONE VITA TAXI
@@ -88,24 +112,8 @@ int main(){
             EXIT_ON_ERROR
         }  
         //======================================
-        //verifico che non sia una richiesta di terminazione
-        if(coda.mtype==1){ 
-            printf("%d ha ricevuto una richiesta di terminazione!\n", getpid());
-    
-            //==========SEZIONE CRITICA==============
-            if(reserveSem(semid_taxi, 0) == -1){     //Decremento semaforo.
-                EXIT_ON_ERROR
-            }  
-            calcolaMax(ptMemCond, &infoTaxi);
-            if(releaseSem(semid_taxi, 0) == -1){     //Incremento semaforo.
-                EXIT_ON_ERROR
-            }  
-            //======================================
-
-            exit(EXIT_SUCCESS);
-        }
+      
         ptMemCond->tripNotExec--;
-
             
         printf("Partenza taxi [%d][%d]\n", infoTaxi.coordTaxi[0], infoTaxi.coordTaxi[1]);
         printf("Sorgente [%d][%d]\n", coda.partenza[0], coda.partenza[1]);
@@ -125,29 +133,7 @@ int main(){
                 printf("Ora il taxi [%ld] è sulla sorgente.\n", (long)getpid()); 
                 valid = 0;
             }else{  //RICHIESTA FALLITA
-                ptMemCond->SO_TAXI--;
-
-                //==========SEZIONE CRITICA==============
-                if(reserveSem(semid_taxi, 0) == -1){     //Decremento semaforo.
-                    EXIT_ON_ERROR
-                }  
-                calcolaMax(ptMemCond, &infoTaxi);
-                if(releaseSem(semid_taxi, 0) == -1){     //Incremento semaforo.
-                    EXIT_ON_ERROR
-                }  
-                //======================================
-
-                ptMemCond->tripAborted++;
-            
-                switch(fork()){
-                    case -1:
-                        EXIT_ON_ERROR
-                    case 0:
-                        execv("TaxiSon", argv);
-                    default:
-                        wait(NULL);
-                        exit(EXIT_SUCCESS);
-                }
+                richiestaAbortita(argv);
             }
                 
         }
@@ -155,30 +141,7 @@ int main(){
         if((valid = TaxiMover(ptMemCond->mappa, &infoTaxi, coda.arrivo[0], coda.arrivo[1], &infoTaxi.tempoImpiegato)) == 1){
             printf("Il taxi [%ld] è arrivato a destinazione.\n", (long)getpid());
         }else{  //RICHIESTA FALLITA
-            
-            ptMemCond->SO_TAXI--;
-    
-            //==========SEZIONE CRITICA==============
-            if(reserveSem(semid_taxi, 0) == -1){     //Decremento semaforo.
-                EXIT_ON_ERROR
-            }  
-            calcolaMax(ptMemCond, &infoTaxi);
-            if(releaseSem(semid_taxi, 0) == -1){     //Incremento semaforo.
-                EXIT_ON_ERROR
-            }  
-            //======================================
-
-            ptMemCond->tripAborted++;
-    
-            switch(fork()){
-                case -1:
-                    EXIT_ON_ERROR
-                case 0:
-                    execv("TaxiSon", argv);
-                default:
-                    wait(NULL);
-                    exit(EXIT_SUCCESS);
-            }
+           richiestaAbortita(argv);
         }
 
         calcolaMax(ptMemCond, &infoTaxi);

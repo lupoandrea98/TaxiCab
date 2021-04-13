@@ -20,7 +20,7 @@ void handlerTaxi(int sig){
     }
 }
 
-int main(){
+int main(int argc, char *argv[]){
    
     int i, numTaxi;
 
@@ -34,21 +34,6 @@ int main(){
         EXIT_ON_ERROR
     }
 
-    //prelevo id semaforo
-    if((semid = semget(SMFKEY, 1, 0666)) == -1){ 
-        EXIT_ON_ERROR
-    }
-
-    //mi aggancio alla coda (0 xk non mi interessano i flag)
-    if((codaid = msgget(MSGKEY, 0 ))==-1){ 
-        EXIT_ON_ERROR     
-    }
-
-    //gestione per il sigterm
-    if(signal(SIGTERM, handlerTaxi) == SIG_ERR){
-        EXIT_ON_ERROR
-    }   
-
     //Creo un altro set di semafori per i taxi
     if((semid_taxi = semget(SMFKEY_1, 2, IPC_CREAT | 0666)) == -1){ 
         EXIT_ON_ERROR
@@ -60,6 +45,11 @@ int main(){
     if(initSemAvailable(semid_taxi, 1, 1) == -1){
         EXIT_ON_ERROR
     }
+    
+    //gestione per il sigterm
+    if(signal(SIGTERM, handlerTaxi) == SIG_ERR){
+        EXIT_ON_ERROR
+    }   
 
     ptMemCond->tripSuccess = 0; 
     ptMemCond->tripAborted = 0; 
@@ -71,8 +61,8 @@ int main(){
     ptMemCond->TaxiPiuStrada[1] = 0; 
     ptMemCond->tripPiuLungo[1] = 0;
     ptMemCond->richPiuRaccolte[1] = 0;
-    numTaxi = rand()%10;
-    print("I taxi sono %d\n", numTaxi);
+    numTaxi = rand()%40;
+    printf("I taxi sono %d\n", numTaxi);
     for(i=0;i<numTaxi;i++){
     
         switch(fork()){ //solo 1 volta xk 1 taxi, SE NO SO_TAXI VOLTE
@@ -81,10 +71,7 @@ int main(){
 
             case 0: //è il figlio TAXI
 
-                execv("TaxiSon", argv);
-                //Al momento della exec, tutti i dati relativi al processo precedente vengono SOSTITUITI
-                //perciò il codice dopo la exec non verrà mai eseguito.
-                //Lascio questa exit failure, perchè nel caso la exec fallisce, allora verrà eseguita questa exit
+                execv("TaxiSon", argv); //Se fallisce la exec allora viene fatta una exit failure.
                 exit(EXIT_FAILURE);          
                    
             } //fine switch taxi
@@ -95,9 +82,5 @@ int main(){
     } 
 
 printf("tutto finito!\n");
-//dealloca semaforo
-// if(semctl(semid_taxi, 0, IPC_RMID, arg)==-1){
-//     EXIT_ON_ERROR
-// }
 exit(EXIT_SUCCESS);
 }

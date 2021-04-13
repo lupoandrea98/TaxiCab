@@ -1,4 +1,3 @@
-//Programma master che stampa tutte le informazioni in tempo reale della simulazione in corso.
 #include "TaxiFunctions.h"
 //SEMAFORI: 
 //  - 0 solo per il segmento di memoria condivisa relativo alla modifica della mappa;
@@ -29,7 +28,7 @@ void deallocation(int codaid, int dataid, int semid){
 }
 
 void handlerMaster(int sig){
-    if(sig == SIGTERM){
+    if(sig == SIGTERM || sig == SIGINT){
         killpg(ptMemCond->SourcePid, SIGTERM);
 
         killpg(ptMemCond->TaxiPid, SIGTERM);
@@ -40,7 +39,6 @@ void handlerMaster(int sig){
     }
 }
 
-//IL MASTER OLTRE A FARE L'OUTPUT DI TUTTO, DEALLOCHERÀ TUTTO
 int main(){
 
     /*  
@@ -50,6 +48,7 @@ int main(){
 
     */
     signal(SIGTERM, handlerMaster);
+    signal(SIGINT, handlerMaster);
     //creo la coda di messaggi
     if((codaid = msgget(MSGKEY, 0666 | IPC_CREAT))== -1){
        EXIT_ON_ERROR 
@@ -90,7 +89,7 @@ int main(){
         EXIT_ON_ERROR
     } 
     //=================================================
-    SO_DURATION = 40;
+    SO_DURATION = (rand()%30)+10;
 
     ptMemCond->durataSimu = SO_DURATION;
     ptMemCond->SO_TAXI = 0;
@@ -144,7 +143,7 @@ int main(){
     killpg(ptMemCond->TaxiPid, SIGTERM);
 
     printf("Stampo resoconto simulazione: \n");
-    sleep(5);
+    sleep(5);   //Necessaria al calcolo da parte di ogni taxi dei dati che vengono stampati seguentemente.
     printf("Il Taxi che ha percorso più strada è: %ld, ed ha percorso %ld celle\n",  ptMemCond->TaxiPiuStrada[1], ptMemCond->TaxiPiuStrada[0]);
     printf("Il Taxi che ha impiegato più tempo per portare a termine la richiesta è: %ld, ed ci ha impiegato %ld nsec\n", ptMemCond->tripPiuLungo[1], ptMemCond->tripPiuLungo[0]);
     printf("Il Taxi che ha raccolto più richieste è: %ld e ne ha raccolte %ld\n", ptMemCond->richPiuRaccolte[1], ptMemCond->richPiuRaccolte[0]);

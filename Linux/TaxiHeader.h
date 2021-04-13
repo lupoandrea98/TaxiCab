@@ -35,8 +35,8 @@
 #define MSIZE 256
 
 //da ricompilare a tempo di esecuzione!------------------------------------
-#define SO_HEIGHT 6 //RIGHE
-#define SO_WIDTH 4 //COLONNE
+#define SO_HEIGHT 10 //RIGHE
+#define SO_WIDTH 10 //COLONNE
 //-------------------------------------------------------------------------
 
 int SO_HOLES; //numero celle inaccessibili (<= W x H)
@@ -49,7 +49,6 @@ int SO_CAP_MIN; //ci servirà per determinare la capMax
 int SO_CAP_MAX; //ci servirà per determinare la capMax
 unsigned long SO_TIMENSEC_MIN; //ci servirà per determinare tempAttravers (nanosec) per ogni cella
 unsigned long SO_TIMENSEC_MAX; //ci servirà per determinare tempAttravers (nanosec) per ogni cella
-char *argv[] = {NULL};      //Serve a rimuovere il warning della execv
 
 struct cella{
     int tipo; //0 libera   1 buco   2 sorgente  3taxi   4 taxi+sorgente
@@ -60,7 +59,7 @@ struct cella{
     struct timespec tempAttravers; //un numero random tra SO_TIMENSEC_MIN e SO_TIMENSEC_MAX nanosecondi (ABBIAMO BISOGNO DELLA STRUCT).
     //tempoAttravers.tv_sec ---> secondi
     //tempoAttravers.tv_nsec ---> nanosecondi
-    //questa struct serve ad usare correttamente la nano sleep.
+    //questa struct serve ad usare correttamente la nanosleep.
     int capMax; //Capacità massima della cella
     int sem;
 };
@@ -145,17 +144,12 @@ void getCellaArrivo(struct cella A[SO_HEIGHT][SO_WIDTH], struct queue *coda);
 
 void calcolaMax(struct data* pt , struct taxi *taxi);
 
-
 //varie:
 int TaxiMover(struct cella mappa[SO_HEIGHT][SO_WIDTH], struct taxi *st, int arrivo_r, int arrivo_c, long *tempoImpiegato); //algoritmo movimento del taxi
 
 void printMap(struct cella map[SO_HEIGHT][SO_WIDTH]); //per la stampa della mappa
 
-void reset();
-
-
 //per i semafori:
 int initSemAvailable(int semId, int semNum, int val);   //abbiamo aggiunto parametro val 
-int initSemInUse(int semId, int semNum);
 int reserveSem(int semId, int semNum);
 int releaseSem(int semId, int semNum);
